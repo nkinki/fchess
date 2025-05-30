@@ -1,8 +1,8 @@
-@import "tailwindcss";
+@import "tailwindcss"; /* Vagy @tailwind base; @tailwind components; @tailwind utilities; ha azt használod */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #ffffff; /* Világos mód háttér */
+  --foreground: #171717; /* Világos mód szöveg */
 }
 
 @theme inline {
@@ -14,8 +14,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0a0a0a; /* Sötét mód háttér */
+    --foreground: #D3D3D3; /* Sötét mód szöveg - ÚJ: LightGray, hogy "átlátszóbbnak" tűnjön */
   }
 }
 

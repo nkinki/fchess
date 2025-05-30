@@ -113,7 +113,7 @@ export default function Home() {
 
       {isAuthenticated && user && (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', margin: '20px 0', padding: '10px', borderRadius: '8px', background: '#eee', border:"1px solid #ddd" }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', margin: '20px 0', padding: '10px', borderRadius: '8px', background: 'transparent', border:"1px solid #ddd" }}>
             {profileImageUrl ? (
               <img // Sima <img> tag használata ideiglenesen
                 src={profileImageUrl}
@@ -125,7 +125,7 @@ export default function Home() {
             )}
             <div>
                 <span style={{ fontWeight: 600, display:"block" }}>{user.displayName || user.username}</span>
-                <span style={{ fontSize: "0.85em", color: "#555" }}>(FID: {user.fid})</span>
+                <span style={{ fontSize: "0.85em", color: "#ccc" }}>(FID: {user.fid})</span>
             </div>
           </div>
           
