@@ -3,14 +3,25 @@
 import { NeynarAuthButton, useNeynarContext } from "@neynar/react";
 import ChessGame from "./ChessGame";
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
+
+interface User {
+  fid?: number;
+  pfpUrl?: string;
+  pfp_url?: string;
+  profileImage?: string;
+  profile_image?: string;
+  displayName?: string;
+  username?: string;
+  custody_address?: string;
+  verifications?: string[];
+}
 
 export default function Home() {
-  // signOut eltávolítva, ha nincs használva, hogy ne legyen ESLint 'no-unused-vars' hiba
   const { user, isAuthenticated, isLoading, error } = useNeynarContext();
 
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [canPlayFree, setCanPlayFree] = useState(true);
-  const [hasPlayedToday, setHasPlayedToday] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [hasTicket, setHasTicket] = useState(false);
 
@@ -21,33 +32,35 @@ export default function Home() {
 
   useEffect(() => {
     if (user) {
-      setProfileImageUrl((user.pfpUrl || user.pfp_url || user.profileImage || user.profile_image) || "");
-      if (user.fid) {
+      const typedUser = user as User;
+      setProfileImageUrl((typedUser.pfpUrl || typedUser.pfp_url || typedUser.profileImage || typedUser.profile_image) || "");
+      if (typedUser.fid) {
         const today = new Date().toISOString().slice(0, 10);
-        const freeKey = `farchess-free-${user.fid}`;
+        const freeKey = `farchess-free-${typedUser.fid}`;
         const lastFreeDay = localStorage.getItem(freeKey);
         const alreadyPlayed = lastFreeDay === today;
         setCanPlayFree(!alreadyPlayed);
-        setHasPlayedToday(alreadyPlayed);
       }
-      const potentialCustody = (user as any).custody_address || 
-                             (Array.isArray(user.verifications) && user.verifications.find(v => typeof v === 'string' && v.startsWith("0x") && v.length === 42));
+      const potentialCustody = typedUser.custody_address || 
+                             (Array.isArray(typedUser.verifications) && typedUser.verifications.find((v: string) => typeof v === 'string' && v.startsWith("0x") && v.length === 42));
       if (potentialCustody && !custodyAddress) {
-        // setCustodyAddress(potentialCustody); // Óvatosan, a verifikált cím nem mindig a custody.
+        // setCustodyAddress(potentialCustody); // Óvatosan ezzel
       }
     }
   }, [user, custodyAddress]);
 
   function handleStartFreeGame() {
-    if (user && user.fid) {
-      const today = new Date().toISOString().slice(0, 10);
-      const freeKey = `farchess-free-${user.fid}`;
-      localStorage.setItem(freeKey, today);
-      setCanPlayFree(false);
-      setHasPlayedToday(true);
-      setGameStarted(true);
-      setTxHash(null); 
-      setFrameTxError(null);
+    if (user) {
+      const typedUser = user as User;
+      if (typedUser.fid) {
+        const today = new Date().toISOString().slice(0, 10);
+        const freeKey = `farchess-free-${typedUser.fid}`;
+        localStorage.setItem(freeKey, today);
+        setCanPlayFree(false);
+        setGameStarted(true);
+        setTxHash(null); 
+        setFrameTxError(null);
+      }
     }
   }
 
@@ -55,19 +68,11 @@ export default function Home() {
     console.log("Message received from parent Frame:", event.data);
     const frameData = event.data;
 
-    // FONTOS: Ellenőrizd az event.origin-t biztonsági okokból!
-    // Példa: const trustedOrigin = new URL(process.env.NEXT_PUBLIC_APP_URL || window.location.origin).origin;
-    // if (event.origin !== trustedOrigin && !['https://warpcast.com', 'https://dev.warpcast.com', 'http://localhost:3001'].includes(event.origin)) { // Helyi teszt Frame originje is
-    //    console.warn(`Untrusted message origin: ${event.origin}`);
-    //    return;
-    // }
-
-
     if (frameData && frameData.type === 'frame:transaction_response') {
       setIsTxPending(false);
       if (frameData.success && frameData.hash) {
         setTxHash(frameData.hash);
-        setHasTicket(true); // FIGYELEM: Backend validáció szükséges a ticket tényleges jóváírásához!
+        setHasTicket(true); 
         alert(`Tranzakció sikeresen elküldve! Hash: ${frameData.hash}. Van egy ticketed.`);
       } else {
         const errorMessage = frameData.error || "Ismeretlen hiba a Frame tranzakció során.";
@@ -77,18 +82,16 @@ export default function Home() {
     }
 
     if (frameData && frameData.type === 'frame:context' && frameData.custodyAddress) {
-        if (!custodyAddress) { // Csak akkor állítjuk be, ha még nincs, vagy ha a Frame-től jön
+        if (!custodyAddress) {
             setCustodyAddress(frameData.custodyAddress);
             console.log("Custody address received from Frame:", frameData.custodyAddress);
         }
     }
-  }, [custodyAddress]); // custodyAddress dependency
+  }, [custodyAddress]);
 
   useEffect(() => {
     window.addEventListener('message', handleFrameMessage);
     if (parent !== window && parent.postMessage) {
-        // A "*" helyett a pontos cél origin-t add meg élesben!
-        // Vagy az iframe originjét dinamikusan: const iframeOrigin = new URL(iframe.src).origin;
         parent.postMessage({ type: 'frame:app_ready', appUrl: window.location.href }, '*');
     }
     return () => {
@@ -118,8 +121,18 @@ export default function Home() {
 
       if (!resp.ok) {
         let errorMessage = `API hiba: ${resp.status} ${resp.statusText}`;
-        try { const errorBody = await resp.json(); errorMessage += ` - ${errorBody.errorDetails || JSON.stringify(errorBody)}`; }
-        catch (e) { try { const textErrorBody = await resp.text(); errorMessage += ` - ${textErrorBody}`; } catch (e2) { /* ignore */ } }
+        try { 
+          const errorBody = await resp.json(); 
+          errorMessage += ` - ${errorBody.errorDetails || JSON.stringify(errorBody)}`; 
+        }
+        catch {
+          try { 
+            const textErrorBody = await resp.text(); 
+            errorMessage += ` - ${textErrorBody}`; 
+          } catch {
+            // Silent catch
+          }
+        }
         throw new Error(errorMessage);
       }
 
@@ -128,31 +141,23 @@ export default function Home() {
 
       if (parent !== window && parent.postMessage) {
         parent.postMessage({
-          type: 'frame:request_transaction', // Ez a típus a Frame implementációdtól függ
+          type: 'frame:request_transaction',
           transaction: {
-            chainId: `eip155:${parseInt(data.chainId, 10)}`, // Pl. "eip155:8453"
-            method: 'eth_sendTransaction', // Standard JSON-RPC
-            params: [{ 
-                to: data.target, 
-                data: data.data, 
-                value: data.value 
-                // 'from' a Frame adja hozzá a felhasználó walletjéből
-            }],
+            chainId: `eip155:${parseInt(data.chainId, 10)}`,
+            method: 'eth_sendTransaction',
+            params: [{ to: data.target, data: data.data, value: data.value }],
           }
-        }, '*'); // FONTOS: A "*" helyett a pontos cél origin-t add meg élesben!
+        }, '*'); 
         alert("Tranzakciós kérés elküldve a Farcaster kliensnek. Hagyd jóvá ott! Várunk a visszajelzésre...");
       } else {
         console.warn("Not running inside a Farcaster Frame or parent.postMessage not available.");
         alert("Csak böngészőben futsz, nincs Farcaster Frame a tranzakció elküldéséhez. Calldata (ellenőrzéshez): " + data.data);
-        setIsTxPending(false); // Itt visszaállítjuk, mert nincs hova küldeni
+        setIsTxPending(false);
       }
-    } catch (err: unknown) { // error típusa unknown
+    } catch (err: unknown) {
         console.error("Hiba a handleBuyTicket során:", err);
-        let message = "Ismeretlen hiba a ticket vásárlásakor.";
-        if (err instanceof Error) {
-            message = err.message;
-        }
-        alert(message);
+        const errorMessage = err instanceof Error ? err.message : "Ismeretlen hiba";
+        alert("Hiba a ticket vásárlásakor: " + errorMessage);
         setIsTxPending(false);
     }
   }
@@ -163,14 +168,14 @@ export default function Home() {
     setTxHash(null);
     setFrameTxError(null);
   }
-  
-  // Ezt a ChessGame komponensnek kellene meghívnia
-  const onGameEnd = () => { 
-    setGameStarted(false);
-  };
 
   if (isLoading) {
-    return ( <main style={{ maxWidth: 480, margin: "40px auto", textAlign: "center", padding: "20px", fontFamily: "Arial, sans-serif" }}><h1 style={{fontSize: "2em", marginBottom:"20px"}}>Farchess</h1><p style={{fontSize:"1.1em", color: "#555"}}>Felhasználói adatok betöltése...</p></main> );
+    return ( 
+      <main style={{ maxWidth: 480, margin: "40px auto", textAlign: "center", padding: "20px", fontFamily: "Arial, sans-serif" }}>
+        <h1 style={{fontSize: "2em", marginBottom:"20px"}}>Farchess</h1>
+        <p style={{fontSize:"1.1em", color: "#555"}}>Felhasználói adatok betöltése...</p>
+      </main> 
+    );
   }
 
   return (
@@ -232,18 +237,20 @@ export default function Home() {
               boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
           }}>
             {profileImageUrl && ( 
-              <img 
-                src={profileImageUrl} 
+              <Image 
+                src={profileImageUrl || "/placeholder.svg"} 
                 alt="Profilkép" 
-                style={{ width: 42, height: 42, borderRadius: "50%", border: "2px solid #007bff" }} 
+                width={42}
+                height={42}
+                style={{ borderRadius: "50%", border: "2px solid #007bff" }} 
               /> 
             )}
             <div style={{textAlign: 'left'}}>
                 <span style={{ fontWeight: "600", fontSize:"1.1em", display: 'block' }}>
-                  {user.displayName || user.username || `FID: ${user.fid}`}
+                  {(user as User).displayName || (user as User).username || `FID: ${(user as User).fid}`}
                 </span>
                 <span style={{ fontSize: "0.9em", color: "#adb5bd" }}>
-                  (FID: {user.fid})
+                  (FID: {(user as User).fid})
                 </span>
             </div>
           </div>
@@ -282,7 +289,7 @@ export default function Home() {
           </div>
 
           {gameStarted && (
-            <ChessGame key={Date.now()} /* onGameEnd={onGameEnd} */ />
+            <ChessGame key={Date.now()} />
           )}
 
           {!gameStarted && (
