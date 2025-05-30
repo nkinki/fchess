@@ -5,6 +5,7 @@ import ChessGame from "./ChessGame";
 import { useEffect, useState, useCallback } from "react";
 
 export default function Home() {
+  // signOut eltávolítva, ha nincs használva, hogy ne legyen ESLint 'no-unused-vars' hiba
   const { user, isAuthenticated, isLoading, error } = useNeynarContext();
 
   const [profileImageUrl, setProfileImageUrl] = useState("");
@@ -32,14 +33,11 @@ export default function Home() {
       const potentialCustody = (user as any).custody_address || 
                              (Array.isArray(user.verifications) && user.verifications.find(v => typeof v === 'string' && v.startsWith("0x") && v.length === 42));
       if (potentialCustody && !custodyAddress) {
-        // setCustodyAddress(potentialCustody); // Óvatosan ezzel
+        // setCustodyAddress(potentialCustody); // Óvatosan, a verifikált cím nem mindig a custody.
       }
     }
   }, [user, custodyAddress]);
 
-  // =======================================================================
-  // ====> ITT VAN A handleStartFreeGame FÜGGVÉNY DEFINÍCIÓJA <====
-  // =======================================================================
   function handleStartFreeGame() {
     if (user && user.fid) {
       const today = new Date().toISOString().slice(0, 10);
@@ -52,18 +50,24 @@ export default function Home() {
       setFrameTxError(null);
     }
   }
-  // =======================================================================
-  // =======================================================================
 
   const handleFrameMessage = useCallback((event: MessageEvent) => {
     console.log("Message received from parent Frame:", event.data);
     const frameData = event.data;
 
+    // FONTOS: Ellenőrizd az event.origin-t biztonsági okokból!
+    // Példa: const trustedOrigin = new URL(process.env.NEXT_PUBLIC_APP_URL || window.location.origin).origin;
+    // if (event.origin !== trustedOrigin && !['https://warpcast.com', 'https://dev.warpcast.com', 'http://localhost:3001'].includes(event.origin)) { // Helyi teszt Frame originje is
+    //    console.warn(`Untrusted message origin: ${event.origin}`);
+    //    return;
+    // }
+
+
     if (frameData && frameData.type === 'frame:transaction_response') {
       setIsTxPending(false);
       if (frameData.success && frameData.hash) {
         setTxHash(frameData.hash);
-        setHasTicket(true); 
+        setHasTicket(true); // FIGYELEM: Backend validáció szükséges a ticket tényleges jóváírásához!
         alert(`Tranzakció sikeresen elküldve! Hash: ${frameData.hash}. Van egy ticketed.`);
       } else {
         const errorMessage = frameData.error || "Ismeretlen hiba a Frame tranzakció során.";
@@ -73,16 +77,18 @@ export default function Home() {
     }
 
     if (frameData && frameData.type === 'frame:context' && frameData.custodyAddress) {
-        if (!custodyAddress) {
+        if (!custodyAddress) { // Csak akkor állítjuk be, ha még nincs, vagy ha a Frame-től jön
             setCustodyAddress(frameData.custodyAddress);
             console.log("Custody address received from Frame:", frameData.custodyAddress);
         }
     }
-  }, [custodyAddress]);
+  }, [custodyAddress]); // custodyAddress dependency
 
   useEffect(() => {
     window.addEventListener('message', handleFrameMessage);
     if (parent !== window && parent.postMessage) {
+        // A "*" helyett a pontos cél origin-t add meg élesben!
+        // Vagy az iframe originjét dinamikusan: const iframeOrigin = new URL(iframe.src).origin;
         parent.postMessage({ type: 'frame:app_ready', appUrl: window.location.href }, '*');
     }
     return () => {
@@ -113,7 +119,7 @@ export default function Home() {
       if (!resp.ok) {
         let errorMessage = `API hiba: ${resp.status} ${resp.statusText}`;
         try { const errorBody = await resp.json(); errorMessage += ` - ${errorBody.errorDetails || JSON.stringify(errorBody)}`; }
-        catch (e) { try { const textErrorBody = await resp.text(); errorMessage += ` - ${textErrorBody}`; } catch (e2) {} }
+        catch (e) { try { const textErrorBody = await resp.text(); errorMessage += ` - ${textErrorBody}`; } catch (e2) { /* ignore */ } }
         throw new Error(errorMessage);
       }
 
@@ -122,22 +128,31 @@ export default function Home() {
 
       if (parent !== window && parent.postMessage) {
         parent.postMessage({
-          type: 'frame:request_transaction',
+          type: 'frame:request_transaction', // Ez a típus a Frame implementációdtól függ
           transaction: {
-            chainId: `eip155:${parseInt(data.chainId, 10)}`,
-            method: 'eth_sendTransaction',
-            params: [{ to: data.target, data: data.data, value: data.value }],
+            chainId: `eip155:${parseInt(data.chainId, 10)}`, // Pl. "eip155:8453"
+            method: 'eth_sendTransaction', // Standard JSON-RPC
+            params: [{ 
+                to: data.target, 
+                data: data.data, 
+                value: data.value 
+                // 'from' a Frame adja hozzá a felhasználó walletjéből
+            }],
           }
-        }, '*'); 
+        }, '*'); // FONTOS: A "*" helyett a pontos cél origin-t add meg élesben!
         alert("Tranzakciós kérés elküldve a Farcaster kliensnek. Hagyd jóvá ott! Várunk a visszajelzésre...");
       } else {
         console.warn("Not running inside a Farcaster Frame or parent.postMessage not available.");
         alert("Csak böngészőben futsz, nincs Farcaster Frame a tranzakció elküldéséhez. Calldata (ellenőrzéshez): " + data.data);
-        setIsTxPending(false);
+        setIsTxPending(false); // Itt visszaállítjuk, mert nincs hova küldeni
       }
-    } catch (err) {
+    } catch (err: unknown) { // error típusa unknown
         console.error("Hiba a handleBuyTicket során:", err);
-        alert("Hiba a ticket vásárlásakor: " + (err as Error).message);
+        let message = "Ismeretlen hiba a ticket vásárlásakor.";
+        if (err instanceof Error) {
+            message = err.message;
+        }
+        alert(message);
         setIsTxPending(false);
     }
   }
@@ -149,10 +164,10 @@ export default function Home() {
     setFrameTxError(null);
   }
   
+  // Ezt a ChessGame komponensnek kellene meghívnia
   const onGameEnd = () => { 
     setGameStarted(false);
   };
-
 
   if (isLoading) {
     return ( <main style={{ maxWidth: 480, margin: "40px auto", textAlign: "center", padding: "20px", fontFamily: "Arial, sans-serif" }}><h1 style={{fontSize: "2em", marginBottom:"20px"}}>Farchess</h1><p style={{fontSize:"1.1em", color: "#555"}}>Felhasználói adatok betöltése...</p></main> );
