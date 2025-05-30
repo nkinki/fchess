@@ -18,21 +18,26 @@ interface User { // User interface a jobb típuskezeléshez
   }
 
 export default function Home() {
-  const { user: neynarUser, isAuthenticated, isLoading, error } = useNeynarContext();
-  const user = neynarUser as User | null; // Típuskonverzió
+  // JAVÍTÁS ITT: isLoading és error eltávolítva a destrukturálásból
+  const { user: neynarUserContextData, isAuthenticated } = useNeynarContext();
+  const user = neynarUserContextData as User | null; // Típuskonverzió
+
+  // Új state a Neynar kontextus betöltési állapotának manuális kezelésére
+  const [isNeynarContextLoading, setIsNeynarContextLoading] = useState(true);
 
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [canPlayFree, setCanPlayFree] = useState(true);
-  // const [hasPlayedToday, setHasPlayedToday] = useState(false); // Ezt a canPlayFree már kezeli
   const [gameStarted, setGameStarted] = useState(false);
-  const [hasTicket, setHasTicket] = useState(false); // Ezt később a valós tranzakciók kezelik majd
+  const [hasTicket, setHasTicket] = useState(false); 
 
-  // Új state-ek a (jövőbeli) Frame tranzakcióhoz
   const [custodyAddress, setCustodyAddress] = useState<string | null>(null);
-  // const [isTxPending, setIsTxPending] = useState(false); // Egyelőre a sima handleBuyTicket nem használja
-  // const [txHash, setTxHash] = useState<string | null>(null);
 
   useEffect(() => {
+    // Ha az isAuthenticated értéke boolean (tehát nem undefined), akkor a kontextus betöltődött
+    if (typeof isAuthenticated === 'boolean') {
+      setIsNeynarContextLoading(false);
+    }
+
     if (user && user.fid) {
       setProfileImageUrl((user.pfpUrl || user.pfp_url || user.profileImage || user.profile_image) || "");
       
@@ -41,19 +46,21 @@ export default function Home() {
       const lastFreeDay = localStorage.getItem(freeKey);
       const alreadyPlayed = lastFreeDay === today;
       setCanPlayFree(!alreadyPlayed);
-      // setHasPlayedToday(alreadyPlayed); // A canPlayFree ezt már lefedi
 
-      // Próbáljuk meg a custody címet is lekérni a user objektumból
       if (user.custodyAddress) {
         setCustodyAddress(user.custodyAddress);
       } else if (Array.isArray(user.verifications) && user.verifications.length > 0) {
         const ethAddress = user.verifications.find(v => v.startsWith("0x") && v.length === 42);
-        if (ethAddress && !custodyAddress) { // Csak akkor állítjuk be, ha még nincs
-          // setCustodyAddress(ethAddress); // Ez lehet, hogy nem a custody, csak egy verifikált cím
+        if (ethAddress && !custodyAddress) { 
+          // setCustodyAddress(ethAddress); 
         }
       }
+    } else if (!isAuthenticated && !isNeynarContextLoading) {
+        // Ha nincs bejelentkezve ÉS a context már nem tölt, akkor alaphelyzetbe állítunk
+        setProfileImageUrl("");
+        setCustodyAddress(null);
     }
-  }, [user, custodyAddress]);
+  }, [user, isAuthenticated, isNeynarContextLoading, custodyAddress]);
 
   function handleStartFreeGame() {
     if (user && user.fid) {
@@ -61,21 +68,17 @@ export default function Home() {
       const freeKey = `farchess-free-${user.fid}`;
       localStorage.setItem(freeKey, today);
       setCanPlayFree(false);
-      // setHasPlayedToday(true);
       setGameStarted(true);
     }
   }
 
-  // Egyszerűsített ticket vásárlás szimuláció egyelőre
   function handleBuyTicket() {
     if (!custodyAddress) {
-        // Egyelőre csak egy alert, a bonyolultabb prompt helyett
         alert("A ticket vásárláshoz a Frame-nek kellene biztosítania a custody wallet címedet, vagy add meg manuálisan (ez a funkció még fejlesztés alatt).");
         return;
     }
-    // Itt jönne az API hívás, de most csak szimuláljuk a ticket megszerzését
     console.log("Ticket vásárlás kezdeményezve a következő címről (szimuláció):", custodyAddress);
-    setHasTicket(true); // Szimuláljuk, hogy van ticket
+    setHasTicket(true); 
     alert("Ticket sikeresen 'megvásárolva' (szimuláció)! Most már játszhatsz vele.");
   }
 
@@ -84,7 +87,8 @@ export default function Home() {
     setGameStarted(true);
   }
 
-  if (isLoading) {
+  // JAVÍTÁS ITT: A manuálisan kezelt isNeynarContextLoading használata
+  if (isNeynarContextLoading) {
     return (
       <main style={{ maxWidth: 440, margin: "40px auto", textAlign: "center", padding: "20px" }}>
         <h1>Farchess Sakk</h1>
@@ -97,15 +101,19 @@ export default function Home() {
     <main style={{ maxWidth: 440, margin: "40px auto", textAlign: "center", padding: "20px", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
       <h1 style={{fontSize: "2.2em", fontWeight:"bold", marginBottom:"20px"}}>Farchess Sakk</h1>
 
-      {error && (
+      {/* JAVÍTÁS ITT: Az 'error' property-t nem tudjuk itt kiolvasni, ha nincs a context típusában.
+          A Neynar hibakezelését a dokumentációjuk alapján kellene implementálni,
+          pl. egy ErrorBoundary komponenssel a NeynarProvider körül, ha az támogatott.
+      */}
+      {/* {error && ( 
         <div style={{ color: 'red', margin: '15px 0', border: '1px solid red', padding: '10px', backgroundColor: '#ffebee', borderRadius:"5px" }}>
           <p><strong>Neynar Hiba:</strong></p>
           <p>{error.message || JSON.stringify(error)}</p>
         </div>
-      )}
+      )} */}
 
       {!isAuthenticated && (
-        <div style={{padding:"15px", border:"1px solid #eee", borderRadius:"5px", background:"#f9f9f9"}}>
+        <div style={{padding:"15px", background:'transparent'}}> {/* A háttér már transparent volt a te kódodban */}
           <p style={{ marginBottom: "15px" }}>Kérlek jelentkezz be a játékhoz:</p>
           <NeynarAuthButton label="Bejelentkezés Farcasterrel" />
         </div>
@@ -113,9 +121,19 @@ export default function Home() {
 
       {isAuthenticated && user && (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', margin: '20px 0', padding: '10px', borderRadius: '8px', background: 'transparent', border:"1px solid #ddd" }}>
+          <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              justifyContent: 'center', 
+              margin: '20px 0', 
+              padding: '10px', 
+              borderRadius: '8px', 
+              background: 'transparent', // A háttér már transparent volt a te kódodban
+              // border:"1px solid #ddd" // A keretet a te kódodban meghagytad, én most is úgy hagyom
+            }}>
             {profileImageUrl ? (
-              <img // Sima <img> tag használata ideiglenesen
+              <img 
                 src={profileImageUrl}
                 alt="Profilkép"
                 style={{ width: 40, height: 40, borderRadius: "50%" }}
@@ -125,11 +143,11 @@ export default function Home() {
             )}
             <div>
                 <span style={{ fontWeight: 600, display:"block" }}>{user.displayName || user.username}</span>
+                {/* A te kódodban a FID színe #ccc volt, ezt meghagyom */}
                 <span style={{ fontSize: "0.85em", color: "#ccc" }}>(FID: {user.fid})</span>
             </div>
           </div>
           
-          {/* Custody wallet cím input (egyszerűsítve) */}
           <div style={{ margin: "15px 0", padding:"10px", border:"1px solid #eee", borderRadius:"5px" }}>
             <label htmlFor="custodyAddr" style={{display:"block", marginBottom:"5px"}}>Custody Wallet Cím (opcionális):</label>
             <input
@@ -141,7 +159,6 @@ export default function Home() {
                 style={{width:"90%", padding:"8px", borderRadius:"4px", border:"1px solid #ccc"}}
             />
           </div>
-
 
           {!gameStarted && (
             <div style={{marginTop:"20px"}}>
