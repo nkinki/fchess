@@ -7,7 +7,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <NeynarContextProvider
       settings={{
         clientId: "c889f600-9421-4d1c-8595-ef551f808cd2",
-        // Itt adhatsz meg egyéb beállításokat is, ha szükséges, pl. defaultFcUser
       }}
     >
       {children}

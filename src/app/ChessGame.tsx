@@ -1,9 +1,9 @@
+// src/app/ChessGame.tsx
 "use client";
 import { useState } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 
-// Gép (AI) random lépés logika
 function getRandomMove(game: Chess) {
   const moves = game.moves();
   if (moves.length === 0) return null;
@@ -11,72 +11,88 @@ function getRandomMove(game: Chess) {
   return moves[randomIdx];
 }
 
+// A page.tsx-ből kivettem a canStartNewGame propot, mert itt nem volt használva.
+// Ha mégis kell, vissza lehet tenni, és a page.tsx-ben is kezelni.
 export default function ChessGame() {
   const [game, setGame] = useState(new Chess());
-  const [isUserTurn, setIsUserTurn] = useState(true); // mindig a felhasználó kezd (fehérrel)
+  const [isUserTurn, setIsUserTurn] = useState(true);
   const [status, setStatus] = useState("");
 
-  // Gép lépése
   function makeAIMove(currentGame: Chess) {
     const move = getRandomMove(currentGame);
     if (move) {
       currentGame.move(move);
       setGame(new Chess(currentGame.fen()));
       setIsUserTurn(true);
+      // Itt frissíthetnénk a státuszt a gép lépése után, ha a játék véget ér vagy sakk van
+      if (currentGame.isGameOver()) {
+        // Kezelhetnénk a játék végét itt is, vagy a getStatusText-ben
+      } else if (currentGame.isCheck()) {
+        // status frissítése
+      }
     }
   }
 
-  // Lépéskezelő
   function onDrop(sourceSquare: string, targetSquare: string) {
-    if (!isUserTurn) return false;
-    const move = game.move({
+    if (!isUserTurn || game.isGameOver()) return false; // Hozzáadtam game.isGameOver() ellenőrzést
+    
+    // Készítsünk egy másolatot a lépéshez, hogy az eredeti 'game' objektum ne módosuljon közvetlenül itt
+    const gameCopy = new Chess(game.fen());
+    const move = gameCopy.move({
       from: sourceSquare,
       to: targetSquare,
       promotion: "q",
     });
+
     if (move === null) return false;
 
-    setGame(new Chess(game.fen()));
+    setGame(gameCopy); // Frissítjük az állapotot a másolattal
     setIsUserTurn(false);
+    setStatus(""); // Töröljük az előző státuszt
 
-    // Ellenőrizzük, vége van-e a játéknak
+    if (gameCopy.isGameOver()) {
+      // A getStatusText majd kezeli a játék vége üzenetet
+      return true;
+    }
+
     setTimeout(() => {
-      const g = new Chess(game.fen());
-      if (g.isGameOver()) {
-        setStatus("Játék vége!");
-        return;
+      // Itt is egy friss másolatot használjunk, ha a gameCopy állapota esetleg máshol is változhatna
+      const gameAfterUserMove = new Chess(gameCopy.fen()); 
+      if (!gameAfterUserMove.isGameOver()) {
+        makeAIMove(gameAfterUserMove);
+        // A makeAIMove frissíti a setGame-et, ami újrarenderelést okoz
       }
-      // Gép lépése
-      makeAIMove(g);
-      if (g.isGameOver()) {
-        setStatus("Játék vége!");
-      }
-    }, 400); // kis késleltetés, hogy "emberibb" legyen a gép
+    }, 400);
     return true;
   }
 
-  // Új játék indítása
   function handleRestart() {
     setGame(new Chess());
     setIsUserTurn(true);
     setStatus("");
   }
 
-  // Játékállapot kiírása
   function getStatusText() {
-    if (status) return status;
-    if (game.isCheckmate()) return isUserTurn ? "Matt! Vesztettél." : "Matt! Nyertél!";
+    if (game.isCheckmate()) { // Fontos, hogy a 'game' state-et használjuk itt
+      return isUserTurn ? "Matt! Vesztettél." : "Matt! Nyertél!";
+    }
     if (game.isDraw()) return "Döntetlen.";
+    if (game.isStalemate()) return "Patt! Döntetlen.";
+    if (game.isThreefoldRepetition()) return "Háromszori lépésismétlés! Döntetlen.";
+    if (game.isInsufficientMaterial()) return "Nincs elég anyag a matthoz! Döntetlen.";
+    
+    if (status) return status; // Ha van manuálisan beállított státusz (pl. "Játék vége!")
+    
     if (game.isCheck()) return isUserTurn ? "Sakkban vagy!" : "Sakkot adtál!";
     return isUserTurn ? "Te jössz (fehér)" : "Gép gondolkodik...";
   }
 
   return (
-    <div style={{ width: "400px", margin: "auto" }}>
-      <button onClick={handleRestart} style={{ marginBottom: "10px" }}>
+    <div style={{ width: "400px", margin: "auto", marginTop:"10px" }}>
+      <button onClick={handleRestart} style={{ marginBottom: "10px", padding:"8px 15px", fontSize:"1em", cursor:"pointer" }}>
         Új játék
       </button>
-      <div style={{ marginBottom: "10px" }}>{getStatusText()}</div>
+      <div style={{ marginBottom: "10px", minHeight:"20px", fontWeight:"bold" }}>{getStatusText()}</div>
       <Chessboard
         position={game.fen()}
         onPieceDrop={onDrop}
