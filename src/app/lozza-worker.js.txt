@@ -1,0 +1,21 @@
+// src/app/lozza-worker.js
+console.log("Lozza-worker.js (src/app): Script started.");
+
+try {
+  console.log("Lozza-worker.js (src/app): Attempting to import Lozza script from ../lib/lozza/lozza.js ...");
+  // Útvonal: src/app -> src -> lib -> lozza -> lozza.js
+  importScripts('../lib/lozza/lozza.js');
+  console.log("Lozza-worker.js (src/app): Lozza script imported successfully.");
+
+  self.postMessage("Lozza worker ready. Engine loaded from src/lib/lozza.");
+  console.log("Lozza-worker.js (src/app): 'Ready' message posted to main thread.");
+
+} catch (e) {
+  console.error("Lozza-worker.js (src/app): ERROR during importScripts or initial setup:", e);
+  let errorMessage = "Lozza worker (src/app) failed to initialize: " + e.message;
+  if (e.stack) {
+    errorMessage += "\nStack: " + e.stack;
+  }
+  self.postMessage(errorMessage);
+  // self.close(); // Hibakeresés alatt ne zárjuk be azonnal
+}
