@@ -60,7 +60,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           setGame((prevGame) => {
             const g = new Chess(prevGame.fen())
             let aiMoveAttempt
-            const movingPiece = g.get(sourceSquare as any)
+            const movingPiece = g.get(sourceSquare as "a1")
             if (
               movingPiece &&
               movingPiece.type === "p" &&
@@ -141,7 +141,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     if (!isUserTurn || game.isGameOver() || gameJustOver || isAIThinking) return false
     const g = new Chess(game.fen())
 
-    const movingPiece = g.get(sourceSquare as any)
+    const movingPiece = g.get(sourceSquare as "a1")
     let moveAttempt
     if (
       movingPiece &&
