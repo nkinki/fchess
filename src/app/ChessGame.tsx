@@ -60,7 +60,8 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           setGame((prevGame) => {
             const g = new Chess(prevGame.fen())
             let aiMoveAttempt
-            const movingPiece = g.get(sourceSquare as "a1")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const movingPiece = g.get(sourceSquare as any)
             if (
               movingPiece &&
               movingPiece.type === "p" &&
@@ -141,7 +142,8 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     if (!isUserTurn || game.isGameOver() || gameJustOver || isAIThinking) return false
     const g = new Chess(game.fen())
 
-    const movingPiece = g.get(sourceSquare as "a1")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const movingPiece = g.get(sourceSquare as any)
     let moveAttempt
     if (
       movingPiece &&
