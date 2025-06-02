@@ -1,24 +1,15 @@
-"use client"
+// src/app/providers.tsx
+"use client";
+import { NeynarContextProvider } from "@neynar/react";
 
-import { NeynarContextProvider } from "@neynar/react"
-import type { ReactNode } from "react"
-
-export default function Providers({ children }: { children: ReactNode }) {
+export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <NeynarContextProvider
       settings={{
-        clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID || "",
-        eventsCallbacks: {
-          onAuthSuccess: () => {
-            console.log("Authentication successful")
-          },
-          onSignout: () => {
-            console.log("User signed out")
-          },
-        },
+        clientId: "c889f600-9421-4d1c-8595-ef551f808cd2",
       }}
     >
       {children}
     </NeynarContextProvider>
-  )
+  );
 }
