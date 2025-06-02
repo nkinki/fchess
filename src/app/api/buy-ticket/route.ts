@@ -1,6 +1,6 @@
 // src/app/api/buy-ticket/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { ethers, Interface, parseUnits } from "ethers"; // ES6 import Ethers v6-hoz
+import { Interface, parseUnits } from "ethers"; // ES6 import Ethers v6-hoz
 
 const CHESS_TOKEN_ADDRESS = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07"; // A te CHESS tokened
 const ERC20_ABI = [
