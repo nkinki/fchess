@@ -1,5 +1,4 @@
 // src/app/page.tsx
-
 "use client";
 
 import { NeynarAuthButton, useNeynarContext } from "@neynar/react";
@@ -25,10 +24,8 @@ export default function Home() {
   const [isNeynarContextLoading, setIsNeynarContextLoading] = useState(true);
   const [profileImageUrl, setProfileImageUrl] = useState("");
   
-  // Kezdetben bárki játszhat, nincs napi korlát vagy jegy szükséglet
-  const [canPlayGame, setCanPlayGame] = useState(true); // Átnevezve és alapértelmezetten true
+  const [canPlayGame, setCanPlayGame] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
-  // const [hasTicket, setHasTicket] = useState(false); // Ezt most nem használjuk
   const [custodyAddress, setCustodyAddress] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,57 +36,31 @@ export default function Home() {
     if (user && user.fid) {
       setProfileImageUrl((user.pfpUrl || user.pfp_url || user.profileImage || user.profile_image) || "");
       
-      // Az ingyenes játék logikáját eltávolítjuk a localStorage-ból
-      // setCanPlayGame(true); // Alapból true, itt nem kell újra állítani, hacsak nincs más logika
-
       if (user.custodyAddress) {
         setCustodyAddress(user.custodyAddress);
       } else if (Array.isArray(user.verifications) && user.verifications.length > 0) {
         const ethAddress = user.verifications.find(v => v.startsWith("0x") && v.length === 42);
         if (ethAddress && !custodyAddress) {
-          // setCustodyAddress(ethAddress); // Ezt továbbra is fontolóra veheted, ha automatikusan szeretnéd kitölteni
+          // setCustodyAddress(ethAddress);
         }
       }
     } else if (!isAuthenticated && !isNeynarContextLoading) {
       setProfileImageUrl("");
       setCustodyAddress(null);
-      setGameStarted(false); // Ha kijelentkezik, állítsuk vissza a játék állapotát
-      setCanPlayGame(true); // És újra játszhasson, ha visszajelentkezik
+      if (gameStarted) {
+        setGameStarted(false);
+      }
     }
-  }, [user, isAuthenticated, isNeynarContextLoading, custodyAddress]);
+  }, [user, isAuthenticated, isNeynarContextLoading, custodyAddress, gameStarted]);
 
-  function handleStartGame() { // Átnevezve handleStartFreeGame-ről
+  function handleStartGame() {
     if (user && user.fid) {
-      // A localStorage és canPlayFree manipulációját eltávolítjuk
-      // const today = new Date().toISOString().slice(0, 10);
-      // const freeKey = `farchess-free-${user.fid}`;
-      // localStorage.setItem(freeKey, today);
-      // setCanPlayGame(false); // Ezt kikommenteljük, hogy többször is játszhasson ugyanabban a sessionben is, vagy a játék végén kellene ezt kezelni
       setGameStarted(true);
     }
   }
 
-  // A handleBuyTicket és handleStartTicketGame funkciókat egyelőre nem használjuk
-  /*
-  function handleBuyTicket() {
-    if (!custodyAddress) {
-      alert("To buy a ticket, your custody wallet address should be provided by the Frame, or enter it manually (this feature is under development).");
-      return;
-    }
-    // setHasTicket(true); // Ezt most nem használjuk
-    alert("Ticket 'purchased' successfully (simulation)! You can now play with it.");
-  }
-
-  function handleStartTicketGame() {
-    // setHasTicket(false); // Ezt most nem használjuk
-    setGameStarted(true);
-  }
-  */
-
-  function handleGameConcluded() {
-    setGameStarted(false);
-    // setCanPlayGame(true); // Ha azt akarjuk, hogy játék után rögtön újra tudjon indítani anélkül, hogy az oldal újratöltődne
-    // Vagy hagyjuk, hogy a canPlayGame true maradjon, és a !gameStarted feltétel elég a gomb megjelenítéséhez
+  function handleOptionalGameEndLogic(winner?: "user" | "opponent" | "draw") {
+    console.log("Game concluded on page.tsx. Winner:", winner);
   }
 
 
@@ -103,7 +74,13 @@ export default function Home() {
   }
 
   return (
-    <main style={{ maxWidth: 440, margin: "40px auto", textAlign: "center", padding: "20px", fontFamily: "var(--font-geist-sans), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}> {/* Geist font használata */}
+    <main style={{ 
+        maxWidth: 440, // Itt volt a hiba valószínűleg, hiányzott a vessző
+        margin: "40px auto", 
+        textAlign: "center", 
+        padding: "20px", 
+        fontFamily: "var(--font-geist-sans), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" 
+    }}>
       <h1 style={{fontSize: "2.2em", fontWeight:"bold", marginBottom:"20px"}}>Farchess Chess</h1>
 
       {!isAuthenticated && (
@@ -170,7 +147,7 @@ export default function Home() {
             </div>
           )}
 
-          {!gameStarted && canPlayGame && ( // `canPlayGame` feltétel maradhat, ha később mégis szeretnénk korlátozni
+          {!gameStarted && canPlayGame && (
             <div style={{marginTop:"10px"}}> 
                 <button onClick={handleStartGame} style={{ padding: "10px 20px", fontSize: "1em", background: "green", color: "white", border:"none", borderRadius:"5px", cursor:"pointer", marginRight:"10px" }}>
                   Start Game
@@ -178,21 +155,7 @@ export default function Home() {
             </div>
           )}
           
-          {gameStarted && <ChessGame onGameConcluded={handleGameConcluded} />} 
-
-          {/* Jegyvásárlási szekció ideiglenesen eltávolítva/kikommentelve */}
-          {/*
-          {!gameStarted && !canPlayGame && !hasTicket && ( // Logika módosítva canPlayGame-re
-            <div style={{ marginTop: "30px", padding:"15px", background:"#2a2a2a", borderRadius:"5px", border:"1px solid #444" }}>
-              <p style={{ color: "#aaa", marginBottom:"10px" }}>
-                You have already played your free game today and you don't have a ticket.
-              </p>
-              <button onClick={handleBuyTicket} style={{ padding: "10px 20px", fontSize: "1em", background: "#d08c00", color: "white", border:"none", borderRadius:"5px", cursor:"pointer" }} >
-                Buy Ticket (Simulation)
-              </button>
-            </div>
-          )}
-          */}
+          {gameStarted && <ChessGame onGameConcluded={handleOptionalGameEndLogic} />} 
         </>
       )}
     </main>
