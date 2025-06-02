@@ -67,7 +67,7 @@ export default function Home() {
   if (isNeynarContextLoading) {
     return (
       <main style={{ maxWidth: 440, margin: "40px auto", textAlign: "center", padding: "20px" }}>
-        <h1>Farchess Chess</h1>
+        <h1>FARCHESS</h1>
         <p>Loading user data...</p>
       </main>
     );
@@ -81,7 +81,7 @@ export default function Home() {
         padding: "20px", 
         fontFamily: "var(--font-geist-sans), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" 
     }}>
-      <h1 style={{fontSize: "2.2em", fontWeight:"bold", marginBottom:"20px"}}>Farchess Chess</h1>
+      <h1 style={{fontSize: "2.2em", fontWeight:"bold", marginBottom:"20px"}}>FARCHESS</h1>
 
       {!isAuthenticated && (
         <div style={{padding:"15px", background:'transparent'}}>
@@ -92,46 +92,56 @@ export default function Home() {
 
       {isAuthenticated && user && (
         <>
-          <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px', 
-              justifyContent: 'center', 
-              margin: '20px 0', 
-              padding: '10px', 
-              borderRadius: '8px', 
-              background: 'transparent', 
-            }}>
-            {profileImageUrl ? (
-              <img 
-                src={profileImageUrl}
-                alt="Profile Picture"
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  border: "2.5px solid #aaa",
-                  boxSizing: "border-box",
-                  background: "#222"
-                }}
-              />
-            ) : (
-              <div style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: "#ccc",
-                display:"flex",
-                alignItems:"center",
-                justifyContent:"center",
-                border: "2.5px solid #aaa"
-              }}>?</div>
-            )}
-            <div>
-                <span style={{ fontWeight: 600, display:"block" }}>{user.displayName || user.username}</span>
-                <span style={{ fontSize: "0.85em", color: "#ccc" }}>(FID: {user.fid})</span>
-            </div>
-          </div>
+          <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+    background: "#181818",
+    border: "2px solid #444",
+    borderRadius: "14px",
+    boxShadow: "0 2px 12px #0004",
+    padding: "16px 26px",
+    margin: "28px auto 18px auto",
+    width: "fit-content",
+    minWidth: 240,
+    justifyContent: "center"
+  }}
+>
+  {profileImageUrl ? (
+    <img
+      src={profileImageUrl}
+      alt="Profile Picture"
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        border: "2.5px solid #888",
+        background: "#222",
+        objectFit: "cover",
+        boxShadow: "0 1px 6px #0002"
+      }}
+    />
+  ) : (
+    <div style={{
+      width: 44,
+      height: 44,
+      borderRadius: "50%",
+      background: "#ccc",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      border: "2.5px solid #888"
+    }}>?</div>
+  )}
+  <span style={{ fontWeight: 600, color: "#fff", fontSize: "1.13em" }}>
+    {user.displayName || user.username}
+    <span style={{ color: "#aaa", fontWeight: 400, marginLeft: 10, fontSize: "0.98em" }}>
+      (FID: {user.fid})
+    </span>
+  </span>
+</div>
+
           
           {!gameStarted && (
             <div style={{ margin: "15px 0", padding:"10px", border:"1px solid #555", borderRadius:"5px", background:'transparent' }}>
@@ -160,4 +170,4 @@ export default function Home() {
       )}
     </main>
   );
-}
+} 
