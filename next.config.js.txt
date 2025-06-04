@@ -1,23 +1,20 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
   images: {
+    domains: ["imagedelivery.net", "res.cloudinary.com", "lh3.googleusercontent.com", "pbs.twimg.com"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'imagedelivery.net',
-        pathname: '/BXluQx4ige9GuW0Ia56BHw/**', // A te specifikus URL-ed alapján
+        protocol: "https",
+        hostname: "**",
       },
-      // Ide jöhetnek más engedélyezett hosztnevek is a jövőben
-      // Például, ha a Neynar API más domainről is adhat képeket:
-      // {
-      //   protocol: 'https',
-      //   hostname: 'i.imgur.com', // Csak példa, a Neynar pfpUrl-ek domainjét kellene ide írni
-      //   pathname: '/**',
-      // },
     ],
   },
-};
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

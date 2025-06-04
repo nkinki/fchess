@@ -6,13 +6,14 @@ import { Chessboard } from "react-chessboard";
 import { sdk } from "@farcaster/frame-sdk";
 
 interface ChessGameProps {
-  onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
+  onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void; // 'ai' átnevezve 'opponent'-re
 }
 
 const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
 const ETH_BASE = "eip155:8453/slip44:60";
-const CHESS_BASE = `eip155:8453/erc20:${CHESS_CONTRACT}`;
+const CHESS_BASE = "eip155:8453/erc20:0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
 
+// Rövidített, híres sakkozókra utaló nevek
 const opponentNamesPool = [
   "M. Carlsen", "G. Kasparov", "R. Fischer", "J. Polgar", "A. Karpov", "M. Tal",
   "V. Anand", "V. Kramnik", "W. So", "H. Nakamura", "F. Caruana", "Ding L.",
@@ -21,8 +22,14 @@ const opponentNamesPool = [
   "Player One", "ChallengerX", "Strategist", "The Thinker", "Rival007"
 ];
 
+// Státuszok az "emberi" szimulációhoz (ezeket meghagyhatjuk, ha tetszenek)
 const humanLikeStatusMessages = [
-  "Hmm...", "Thinking.", "Interesting.", "My move.", "Contemplating...", "Okay...",
+  "Hmm...",
+  "Thinking.",
+  "Interesting.",
+  "My move.",
+  "Contemplating...",
+  "Okay...",
 ];
 
 export default function ChessGame({ onGameConcluded }: ChessGameProps) {
@@ -31,12 +38,13 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const [gameJustOver, setGameJustOver] = useState(false);
   const [isOpponentThinking, setIsOpponentThinking] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [status, setStatus] = useState<string>("Finding opponent...");
+  const [status, setStatus] = useState<string>("Finding opponent..."); // Kezdeti státusz
   const [opponentName, setOpponentName] = useState<string>("Your Opponent");
 
   const lozzaWorkerRef = useRef<Worker | null>(null);
   const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const selectRandomOpponentName = () => {
     const randomIndex = Math.floor(Math.random() * opponentNamesPool.length);
@@ -44,39 +52,32 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   };
 
   const showThinkingStatus = () => {
-    if (gameJustOver) return;
     if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
     const randomHumanStatus = humanLikeStatusMessages[Math.floor(Math.random() * humanLikeStatusMessages.length)];
     setStatus(`${opponentName}: "${randomHumanStatus}"`);
 
     statusTimeoutRef.current = setTimeout(() => {
-      if (isOpponentThinking && !gameJustOver) {
+      if (isOpponentThinking) {
         setStatus(`${opponentName} is thinking...`);
       }
-    }, 1500 + Math.random() * 1500);
+    }, 1500 + Math.random() * 1500); // 1.5-3 másodperc
   };
 
   const startConnectionSequence = (newOpponentName: string, isInitialConnection: boolean) => {
-    let countdown = 6;
-    const messagePrefix = isInitialConnection ? `Connecting to ${newOpponentName}` : `Switching to ${newOpponentName}`;
-    
-    setGameJustOver(false);
-    setIsUserTurn(true);
-    setIsOpponentThinking(false);
-    setGame(new Chess());
-    setOpponentName(newOpponentName);
-    setStatus(`${messagePrefix}... ${countdown}`);
+    let countdown = 3;
+    setStatus(isInitialConnection ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
 
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     countdownIntervalRef.current = setInterval(() => {
       countdown -= 1;
       if (countdown > 0) {
-        setStatus(`${messagePrefix}... ${countdown}`);
+        setStatus(isInitialConnection ? `Connecting to ${newOpponentName}... ${countdown}`: `Switching to ${newOpponentName}... ${countdown}`);
       } else {
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        setStatus(`Game started vs ${newOpponentName}. Your turn (White).`);
+        setStatus(`Connected with ${newOpponentName}. Your turn (White).`);
         
+        // Worker inicializálása vagy újraindítása csak a kapcsolódás "vége" után
         if (isInitialConnection) {
           initializeWorker(newOpponentName);
         } else {
@@ -86,7 +87,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
             }
         }
       }
-    }, 1000);
+    }, 1000); // 1 másodpercenként frissít
   };
   
   const initializeWorker = (currentOpponentName: string) => {
@@ -100,10 +101,6 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           console.log("[MainThread] Received from worker:", message);
   
           if (message.startsWith("bestmove")) {
-            if (game.isGameOver() || gameJustOver) {
-                setIsOpponentThinking(false);
-                return;
-            }
             setIsOpponentThinking(false);
             if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
             const parts = message.split(" ");
@@ -114,7 +111,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
               const promotion = moveStr.length === 5 ? moveStr.substring(4, 5).toLowerCase() : undefined;
   
               setGame((prevGame) => {
-                if (prevGame.isGameOver()) { 
+                if (prevGame.isGameOver() || prevGame.fen() === new Chess().fen() ) {
                     return prevGame;
                 }
                 const g = new Chess(prevGame.fen());
@@ -133,24 +130,18 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   
                 if (opponentMoveAttempt) {
                   setIsUserTurn(true);
-                  if (!g.isGameOver()) {
-                    setStatus("Your turn (White)");
-                  }
+                  setStatus("Your turn (White)");
                   return g;
                 } else {
                   console.warn("Opponent failed to make a valid move:", moveStr, "FEN:", g.fen());
                   setIsUserTurn(true);
-                  if (!g.isGameOver()){
-                    setStatus(`${opponentName} attempted invalid move. Your turn.`);
-                  }
+                  setStatus(`${opponentName} attempted invalid move. Your turn.`);
                   return prevGame;
                 }
               });
             } else {
               setIsUserTurn(true);
-              if(!game.isGameOver() && !gameJustOver) {
-                setStatus(`${opponentName} did not provide a move. Your turn.`);
-              }
+              setStatus(`${opponentName} did not provide a move. Your turn.`);
             }
           } else if (message.includes('[LozzaWorker] Worker script initialized and lozza.js loaded.')) {
             console.log("Lozza worker confirmed initialization.");
@@ -160,6 +151,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
             }
           } else if (message === 'readyok') {
               console.log("Engine confirmed ready (readyok).");
+              // A státusz már a visszaszámlálás végén beállítódik
           } else if (message.includes('FATAL ERROR') || message.includes('ERROR during importScripts')) {
             console.error("Critical error message from worker:", message);
             setStatus("Game engine failed to load. Please restart.");
@@ -171,9 +163,8 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           }
         };
   
-        // JAVÍTÁS ITT:
-        newWorker.onerror = (_error) => { 
-          console.error("Lozza Worker onerror event:", _error);
+        newWorker.onerror = (error) => {
+          console.error("Lozza Worker onerror event:", error);
           setIsOpponentThinking(false);
           setStatus("Game engine error. Please restart game.");
           if (lozzaWorkerRef.current) {
@@ -182,56 +173,20 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           }
         };
   
-      } catch (_e) { // JAVÍTVA: e -> _e (vagy használd fel)
-        console.error("Failed to initialize worker (in try-catch):", _e);
+      } catch (e) {
+        console.error("Failed to initialize worker (in try-catch):", e);
         setStatus("Error: Could not load game engine. Try refreshing.");
         setIsOpponentThinking(false);
       }
   };
 
-  async function handleSwap() {
-    try {
-      const result = await sdk.actions.swapToken({
-        sellToken: ETH_BASE,
-        buyToken: CHESS_BASE,
-      });
-      if (result && result.success) {
-        console.log("Swap successful!", result.swap.transactions);
-        alert("Swap successful! Check console for transaction details.");
-      } else if (result && !result.success) {
-        console.warn("Swap failed or rejected:", result.reason, result.error);
-        alert(`Swap failed or rejected: ${result.reason || result.error || 'Unknown reason'}`);
-      } else {
-        console.warn("Swap was cancelled or not supported in this environment.");
-        alert("Swap was cancelled or not supported in this environment.");
-      }
-    } catch (err: unknown) {
-      console.error("Swap error:", err);
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      alert(`Swap error: ${message}`);
-    }
-  }
 
-  function handleCopy() {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(CHESS_CONTRACT)
-        .then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1200);
-        })
-        .catch(err => {
-          console.error("Failed to copy text: ", err);
-          alert("Could not copy to clipboard. Please copy the address manually.");
-        });
-    } else {
-      console.warn("Clipboard API not available");
-      alert("Clipboard API not available. Please copy the address manually: " + CHESS_CONTRACT);
-    }
-  }
+  async function handleSwap() { /* ... */ }
 
   useEffect(() => {
     const initialOpponentName = selectRandomOpponentName();
-    startConnectionSequence(initialOpponentName, true);
+    setOpponentName(initialOpponentName);
+    startConnectionSequence(initialOpponentName, true); // Kezdeti kapcsolódás
 
     return () => {
       if (lozzaWorkerRef.current) {
@@ -242,7 +197,6 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
       if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -250,6 +204,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
       setGameJustOver(true);
       setIsOpponentThinking(false);
       if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       
       let gameWinner: "user" | "opponent" | "draw" = "draw";
       if (game.isCheckmate()) {
@@ -261,21 +216,23 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
       }
 
       if (gameWinner === "user") {
-        setStatus("Congratulations, you won! Play again?");
+        setStatus("Congratulations, you won!");
       } else if (gameWinner === "opponent") {
-        setStatus(`Game over, ${opponentName} wins! Try again?`);
+        setStatus(`Game over, ${opponentName} wins!`);
       } else {
-        setStatus("It's a draw! Rematch?");
+        setStatus("It's a draw!");
       }
 
       if (typeof onGameConcluded === "function") {
         onGameConcluded(gameWinner);
       }
     }
-  }, [game, onGameConcluded, opponentName, gameJustOver]); // Visszatettem a gameJustOver-t
+  }, [game, onGameConcluded, gameJustOver, opponentName]);
 
   function makeOpponentMove(currentFen: string) {
-    if (game.isGameOver() || gameJustOver || !lozzaWorkerRef.current || isOpponentThinking) return;
+    if (game.isGameOver() || !lozzaWorkerRef.current || isOpponentThinking) {
+      return;
+    }
     setIsOpponentThinking(true);
     showThinkingStatus();
     
@@ -317,22 +274,30 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     setIsUserTurn(false);
     const delayBeforeOpponentMove = 500 + Math.random() * 1000;
     setTimeout(() => {
-        if (!g.isGameOver() && !gameJustOver) {
+        if (!g.isGameOver()) {
              makeOpponentMove(g.fen());
         }
     }, delayBeforeOpponentMove);
     return true;
   }
 
+  function handleCopy() { /* ... */ }
+
   function handleRestartGame() {
-    if (lozzaWorkerRef.current) {
+    if (isOpponentThinking && lozzaWorkerRef.current) {
         lozzaWorkerRef.current.postMessage("stop");
     }
     if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     
+    setGame(new Chess());
+    setIsUserTurn(true);
+    setGameJustOver(false);
+    setIsOpponentThinking(false);
+    
     const newOpponentName = selectRandomOpponentName();
-    startConnectionSequence(newOpponentName, false);
+    setOpponentName(newOpponentName);
+    startConnectionSequence(newOpponentName, false); // Újraindításkor nem "initial" a kapcsolódás
   }
 
   function getCurrentStatusText() {
@@ -399,13 +364,15 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           {copied ? "Copied!" : CHESS_CONTRACT}
         </span>
       </div>
-      
+      <div style={{ textAlign: 'center', marginBottom: '5px', fontStyle: 'italic', color: '#ccc', fontSize: '0.9em' }}>
+         Playing against: {opponentName}
+      </div>
       <div
         style={{
           marginBottom: "10px",
           minHeight: "20px",
           fontWeight: "bold",
-          fontStyle: isOpponentThinking && !gameJustOver ? "italic" : "normal",
+          fontStyle: isOpponentThinking ? "italic" : "normal",
           textAlign: "center"
         }}
       >
@@ -434,7 +401,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
             cursor: "pointer",
           }}
         >
-          {gameJustOver ? "Play New Game" : "Restart Game"}
+          Restart Game
         </button>
       </div>
     </div>

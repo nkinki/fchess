@@ -1,5 +1,3 @@
-// src/app/api/buy-ticket/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { Interface, parseUnits } from "ethers";
 
