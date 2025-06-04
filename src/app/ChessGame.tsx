@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { sdk } from "@farcaster/frame-sdk";
+
 
 interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void; // 'ai' átnevezve 'opponent'-re
 }
 
 const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
-const ETH_BASE = "eip155:8453/slip44:60";
+
 const CHESS_BASE = "eip155:8453/erc20:0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
 
 // Rövidített, híres sakkozókra utaló nevek
@@ -37,7 +37,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
   const [isOpponentThinking, setIsOpponentThinking] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied] = useState(false);
   const [status, setStatus] = useState<string>("Finding opponent..."); // Kezdeti státusz
   const [opponentName, setOpponentName] = useState<string>("Your Opponent");
 
