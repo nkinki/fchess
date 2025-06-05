@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Chess } from 'chess.js';
+import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
 interface ChessGameProps {
@@ -35,7 +35,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Reszponzív méretezés
+  // Responsive sizing
   useEffect(() => {
     const updateBoardSize = () => {
       if (containerRef.current) {
@@ -83,8 +83,8 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           
           const moveStr = message.split(" ")[1];
           if (moveStr && moveStr !== '(none)') {
-            const sourceSquare = moveStr.substring(0, 2);
-            const targetSquare = moveStr.substring(2, 4);
+            const sourceSquare = moveStr.substring(0, 2) as Square;
+            const targetSquare = moveStr.substring(2, 4) as Square;
             const promotion = moveStr.length === 5 ? moveStr[4].toLowerCase() : undefined;
 
             setGame(prev => {
@@ -162,7 +162,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     lozzaWorkerRef.current.postMessage(`go movetime ${Math.round(1500 + Math.random() * 2000)}`);
   }, [game, isOpponentThinking, showThinkingStatus]);
 
-  const onDrop = useCallback((sourceSquare: string, targetSquare: string) => {
+  const onDrop = useCallback((sourceSquare: Square, targetSquare: Square) => {
     if (!isUserTurn || game.isGameOver() || gameJustOver || isOpponentThinking || isConnecting) return false;
     
     const newGame = new Chess(game.fen());
