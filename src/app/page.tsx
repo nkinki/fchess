@@ -1,4 +1,3 @@
-// src/app/page.tsx
 "use client";
 
 import { NeynarAuthButton, useNeynarContext } from "@neynar/react";
@@ -23,8 +22,6 @@ export default function Home() {
 
   const [isNeynarContextLoading, setIsNeynarContextLoading] = useState(true);
   const [profileImageUrl, setProfileImageUrl] = useState("");
-  
-  const [canPlayGame, setCanPlayGame] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
   const [custodyAddress, setCustodyAddress] = useState<string | null>(null);
 
@@ -63,7 +60,6 @@ export default function Home() {
     console.log("Game concluded on page.tsx. Winner:", winner);
   }
 
-
   if (isNeynarContextLoading) {
     return (
       <main style={{ maxWidth: 440, margin: "40px auto", textAlign: "center", padding: "20px" }}>
@@ -75,7 +71,7 @@ export default function Home() {
 
   return (
     <main style={{ 
-        maxWidth: 440, // Itt volt a hiba valószínűleg, hiányzott a vessző
+        maxWidth: 440,
         margin: "40px auto", 
         textAlign: "center", 
         padding: "20px", 
@@ -92,56 +88,53 @@ export default function Home() {
 
       {isAuthenticated && user && (
         <>
-          <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    background: "#181818",
-    border: "2px solid #444",
-    borderRadius: "14px",
-    boxShadow: "0 2px 12px #0004",
-    padding: "16px 26px",
-    margin: "28px auto 18px auto",
-    width: "fit-content",
-    minWidth: 240,
-    justifyContent: "center"
-  }}
->
-  {profileImageUrl ? (
-    <img
-      src={profileImageUrl}
-      alt="Profile Picture"
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: "50%",
-        border: "2.5px solid #888",
-        background: "#222",
-        objectFit: "cover",
-        boxShadow: "0 1px 6px #0002"
-      }}
-    />
-  ) : (
-    <div style={{
-      width: 44,
-      height: 44,
-      borderRadius: "50%",
-      background: "#ccc",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      border: "2.5px solid #888"
-    }}>?</div>
-  )}
-  <span style={{ fontWeight: 600, color: "#fff", fontSize: "1.13em" }}>
-    {user.displayName || user.username}
-    <span style={{ color: "#aaa", fontWeight: 400, marginLeft: 10, fontSize: "0.98em" }}>
-      (FID: {user.fid})
-    </span>
-  </span>
-</div>
-
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            background: "#181818",
+            border: "2px solid #444",
+            borderRadius: "14px",
+            boxShadow: "0 2px 12px #0004",
+            padding: "16px 26px",
+            margin: "28px auto 18px auto",
+            width: "fit-content",
+            minWidth: 240,
+            justifyContent: "center"
+          }}>
+            {profileImageUrl ? (
+              <img
+                src={profileImageUrl}
+                alt="Profile Picture"
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  border: "2.5px solid #888",
+                  background: "#222",
+                  objectFit: "cover",
+                  boxShadow: "0 1px 6px #0002"
+                }}
+              />
+            ) : (
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "#ccc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2.5px solid #888"
+              }}>?</div>
+            )}
+            <span style={{ fontWeight: 600, color: "#fff", fontSize: "1.13em" }}>
+              {user.displayName || user.username}
+              <span style={{ color: "#aaa", fontWeight: 400, marginLeft: 10, fontSize: "0.98em" }}>
+                (FID: {user.fid})
+              </span>
+            </span>
+          </div>
           
           {!gameStarted && (
             <div style={{ margin: "15px 0", padding:"10px", border:"1px solid #555", borderRadius:"5px", background:'transparent' }}>
@@ -157,7 +150,7 @@ export default function Home() {
             </div>
           )}
 
-          {!gameStarted && canPlayGame && (
+          {!gameStarted && (
             <div style={{marginTop:"10px"}}> 
                 <button onClick={handleStartGame} style={{ padding: "10px 20px", fontSize: "1em", background: "green", color: "white", border:"none", borderRadius:"5px", cursor:"pointer", marginRight:"10px" }}>
                   Start Game
@@ -170,4 +163,4 @@ export default function Home() {
       )}
     </main>
   );
-} 
+}
