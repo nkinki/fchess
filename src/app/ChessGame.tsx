@@ -24,6 +24,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
   const [isOpponentThinking, setIsOpponentThinking] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(true); // Új állapot
   const [status, setStatus] = useState("Finding opponent...");
   const [opponentName, setOpponentName] = useState("Your Opponent");
   const [copied, setCopied] = useState(false);
@@ -39,7 +40,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     const updateBoardSize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const calculatedSize = Math.min(containerWidth - 40, 500); // -40 a padding miatt
+        const calculatedSize = Math.min(containerWidth - 40, 500);
         setBoardSize(calculatedSize);
       }
     };
@@ -123,6 +124,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   }, [opponentName]);
 
   const startConnectionSequence = useCallback((newOpponentName: string, isInitial: boolean) => {
+    setIsConnecting(true);
     let countdown = 3;
     setStatus(isInitial 
       ? `Connecting to ${newOpponentName}... ${countdown}`
@@ -139,6 +141,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
       } else {
         clearInterval(countdownIntervalRef.current!);
         setStatus(`Connected with ${newOpponentName}. Your turn (White).`);
+        setIsConnecting(false);
         
         if (isInitial) {
           initializeWorker(newOpponentName);
@@ -160,7 +163,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   }, [game, isOpponentThinking, showThinkingStatus]);
 
   const onDrop = useCallback((sourceSquare: string, targetSquare: string) => {
-    if (!isUserTurn || game.isGameOver() || gameJustOver || isOpponentThinking) return false;
+    if (!isUserTurn || game.isGameOver() || gameJustOver || isOpponentThinking || isConnecting) return false;
     
     const newGame = new Chess(game.fen());
     const movingPiece = newGame.get(sourceSquare);
@@ -188,7 +191,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     } catch {
       return false;
     }
-  }, [game, isUserTurn, gameJustOver, isOpponentThinking, makeOpponentMove]);
+  }, [game, isUserTurn, gameJustOver, isOpponentThinking, isConnecting, makeOpponentMove]);
 
   const handleRestartGame = useCallback(() => {
     if (isOpponentThinking && lozzaWorkerRef.current) {
@@ -201,6 +204,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     setIsUserTurn(true);
     setGameJustOver(false);
     setIsOpponentThinking(false);
+    setIsConnecting(true);
     
     const newOpponent = selectRandomOpponentName();
     setOpponentName(newOpponent);
@@ -229,6 +233,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     if (game.isGameOver() && !gameJustOver) {
       setGameJustOver(true);
       setIsOpponentThinking(false);
+      setIsConnecting(false);
       clearTimeout(statusTimeoutRef.current!);
       clearInterval(countdownIntervalRef.current!);
       
@@ -327,8 +332,8 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
         padding: "12px",
         textAlign: "center",
         fontWeight: "bold",
-        color: isOpponentThinking ? "#ffa500" : "#fff",
-        fontStyle: isOpponentThinking ? "italic" : "normal",
+        color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff",
+        fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal",
         background: "#181c24",
         borderRadius: "8px",
         minHeight: "20px",
@@ -337,7 +342,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
         {status}
       </div>
 
-      {/* Chessboard - Most már reszponzív */}
+      {/* Chessboard */}
       <div style={{
         width: '100%',
         display: 'flex',
@@ -348,7 +353,11 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
           position={game.fen()}
           onPieceDrop={onDrop}
           arePiecesDraggable={
-            isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking
+            isUserTurn && 
+            !game.isGameOver() && 
+            !gameJustOver && 
+            !isOpponentThinking &&
+            !isConnecting
           }
           boardOrientation="white"
           boardWidth={boardSize}
