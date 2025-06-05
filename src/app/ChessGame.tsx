@@ -24,7 +24,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
   const [isOpponentThinking, setIsOpponentThinking] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(true); // Új állapot
+  const [isConnecting, setIsConnecting] = useState(true);
   const [status, setStatus] = useState("Finding opponent...");
   const [opponentName, setOpponentName] = useState("Your Opponent");
   const [copied, setCopied] = useState(false);
@@ -69,7 +69,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     }, 1500 + Math.random() * 1500);
   }, [opponentName, isOpponentThinking]);
 
-  const initializeWorker = useCallback((currentOpponentName: string) => {
+  const initializeWorker = useCallback(() => {
     try {
       const worker = new Worker('/lozza-worker.js');
       lozzaWorkerRef.current = worker;
@@ -144,7 +144,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
         setIsConnecting(false);
         
         if (isInitial) {
-          initializeWorker(newOpponentName);
+          initializeWorker();
         } else if (lozzaWorkerRef.current) {
           lozzaWorkerRef.current.postMessage("ucinewgame");
         }
