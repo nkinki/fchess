@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { Interface, parseUnits } from "ethers";
 
 const CHESS_TOKEN_ADDRESS = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
@@ -8,7 +8,7 @@ const ERC20_ABI = [
 const TREASURY_WALLET_ADDRESS = "0xdAAd35AA682DDaC4655642991A9224D1AB3Bce6a";
 const TICKET_PRICE_CHESS_TOKENS = "1000";
 
-export async function POST(_request: NextRequest) {
+export async function POST() {
   console.log("/api/buy-ticket POST request received. Target treasury:", TREASURY_WALLET_ADDRESS);
   try {
     const toAddress = TREASURY_WALLET_ADDRESS;
