@@ -254,10 +254,16 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
         <Chessboard
           position={game.fen()} onPieceDrop={onDrop}
-          arePiecesDraggable={({ piece }) => 
-            // JAVÍTÁS: A teljes kifejezést boolean-ná konvertáljuk a !! operátorral
-            !!(isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting && piece.startsWith('w'))
-          }
+          arePiecesDraggable={({ piece }) => {
+            // JAVÍTÁS: Ahelyett, hogy a !! operátort használjuk,
+            // ami úgy tűnik, nem tetszik a fordítónak, explicit
+            // `true` vagy `false` értéket adunk vissza.
+            const conditionsMet = isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting && piece.startsWith('w');
+            if (conditionsMet) {
+              return true;
+            }
+            return false;
+          }}
           boardOrientation="white" boardWidth={boardSize}
           customDarkSquareStyle={{ backgroundColor: '#B58863' }}
           customLightSquareStyle={{ backgroundColor: '#F0D9B5' }}
