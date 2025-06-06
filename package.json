@@ -17,6 +17,7 @@
     "@neynar/react": "^1.2.0",
     "@pigment-css/react": "^0.0.30",
     "@thirdweb-dev/react": "^4.9.4",
+    "@vercel/postgres": "^0.10.0",
     "chess.js": "^1.2.0",
     "ethers": "^6.10.0",
     "groq-sdk": "^0.23.0",
