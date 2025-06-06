@@ -23,9 +23,12 @@ export default async function handler(
     // Egyetlen "okos" SQL paranccsal frissítjük a felhasználót.
     // Az ON CONFLICT ... DO UPDATE biztosítja, hogy ha a felhasználó már létezik,
     // akkor csak frissítjük, ha nem, akkor beszúrjuk.
+    
+    // JAVÍTÁS: A BigInt(fid) helyett String(fid)-et használunk a típuskompatibilitás miatt.
+    // A Postgres adatbázis a stringként kapott számot helyesen fogja BIGINT-ként kezelni.
     await db.sql`
       INSERT INTO users (fid, has_played_free_game, custody_address)
-      VALUES (${BigInt(fid)}, TRUE, ${custodyAddress})
+      VALUES (${String(fid)}, TRUE, ${custodyAddress})
       ON CONFLICT (fid) 
       DO UPDATE SET 
         has_played_free_game = TRUE, 
