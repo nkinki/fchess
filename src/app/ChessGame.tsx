@@ -3,6 +3,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
+// A függvény paramétereinek típusait expliciten definiáljuk
+interface DraggablePieceArgs {
+  piece: string;
+  sourceSquare: Square;
+}
+
 interface User {
   fid?: number;
   displayName?: string;
@@ -13,7 +19,7 @@ interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
   user: User | null;
   profileImageUrl: string;
-  onNewGameClick: () => void; // A "New Game" gomb eseménykezelője
+  onNewGameClick: () => void;
 }
 
 const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
@@ -221,6 +227,18 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
     }
   }, [game, gameJustOver, opponentName, onGameConcluded]);
 
+  // JAVÍTÁS: A logikát kiemeltük egy különálló függvénybe
+  const canDragPiece = ({ piece }: DraggablePieceArgs): boolean => {
+    if (!isUserTurn) return false;
+    if (game.isGameOver()) return false;
+    if (gameJustOver) return false;
+    if (isOpponentThinking) return false;
+    if (isConnecting) return false;
+    if (!piece.startsWith('w')) return false;
+    
+    return true;
+  };
+
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
       {/* Game Header */}
@@ -254,16 +272,7 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
         <Chessboard
           position={game.fen()} onPieceDrop={onDrop}
-          arePiecesDraggable={({ piece }) => {
-            // JAVÍTÁS: Ahelyett, hogy a !! operátort használjuk,
-            // ami úgy tűnik, nem tetszik a fordítónak, explicit
-            // `true` vagy `false` értéket adunk vissza.
-            const conditionsMet = isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting && piece.startsWith('w');
-            if (conditionsMet) {
-              return true;
-            }
-            return false;
-          }}
+          arePiecesDraggable={canDragPiece} // JAVÍTÁS: Itt adjuk át a különálló függvényt
           boardOrientation="white" boardWidth={boardSize}
           customDarkSquareStyle={{ backgroundColor: '#B58863' }}
           customLightSquareStyle={{ backgroundColor: '#F0D9B5' }}
