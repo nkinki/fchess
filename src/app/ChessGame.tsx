@@ -188,8 +188,6 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       return false;
     }
   }, [game, isUserTurn, gameJustOver, isOpponentThinking, isConnecting, makeOpponentMove]);
-  
-  // A belső újraindító logikát eltávolítottuk, mert a vezérlés a page.tsx-hez került.
 
   useEffect(() => {
     const initialOpponent = selectRandomOpponentName();
@@ -256,7 +254,10 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
         <Chessboard
           position={game.fen()} onPieceDrop={onDrop}
-          arePiecesDraggable={({ piece }) => isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting && piece.startsWith('w')}
+          arePiecesDraggable={({ piece }) => 
+            // JAVÍTÁS: A teljes kifejezést boolean-ná konvertáljuk a !! operátorral
+            !!(isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting && piece.startsWith('w'))
+          }
           boardOrientation="white" boardWidth={boardSize}
           customDarkSquareStyle={{ backgroundColor: '#B58863' }}
           customLightSquareStyle={{ backgroundColor: '#F0D9B5' }}
@@ -267,7 +268,7 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       {/* Game Controls */}
       <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginTop: "15px" }}>
         <button
-          onClick={onNewGameClick} // Itt használjuk az új propot
+          onClick={onNewGameClick}
           style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c82333"; }}
           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#dc3545"; }}>
