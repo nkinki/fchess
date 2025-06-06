@@ -142,8 +142,10 @@ export default function Home() {
           {gameStarted && 
             <ChessGame 
               onGameConcluded={handleOptionalGameEndLogic} 
+              // Visszaállítottuk a propokat
+              user={user} 
+              profileImageUrl={profileImageUrl}
               onNewGameClick={handleNewGameRequest}
-              // A felesleges user és profileImageUrl propokat eltávolítottuk
             />}
         </>
       )}

@@ -3,13 +3,20 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
-interface ChessGameProps {
-  onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
-  onNewGameClick: () => void;
+// Visszaállítjuk az User interfészt
+interface User {
+  fid?: number;
+  displayName?: string;
+  username?: string;
 }
 
-// A CHESS_CONTRACT konstanst eltávolítottuk
-// const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
+interface ChessGameProps {
+  onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
+  // Visszaállítjuk a szükséges propokat
+  user: User | null;
+  profileImageUrl: string;
+  onNewGameClick: () => void;
+}
 
 const opponentNamesPool = [
   "M. Carlsen", "G. Kasparov", "R. Fischer", "J. Polgar", 
@@ -21,7 +28,8 @@ const humanLikeStatusMessages = [
   "Let me see...", "Okay", "I know this"
 ];
 
-export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGameProps) {
+// Visszaadjuk a propokat a komponensnek
+export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNewGameClick }: ChessGameProps) {
   const [game, setGame] = useState(() => new Chess());
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
@@ -193,6 +201,19 @@ export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGame
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
+      
+      {/* Visszaállított Matchup Info doboz */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '10px 15px', background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {profileImageUrl ? (<img src={profileImageUrl} alt="Your profile" style={{ width: 40, height: 40, borderRadius: '50%', background: '#222', objectFit: 'cover' }} />) : (<div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ccc' }}>?</div>)}
+          <span style={{ color: '#fff', fontWeight: 'bold' }}>{user?.displayName || 'You'}</span>
+        </div>
+        <span style={{ color: '#aaa', fontWeight: 'bold', margin: '0 10px' }}>VS</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: "1.2em", fontWeight: "bold", color: "#fff" }}>{opponentName}</div>
+          <div style={{ fontSize: "0.9em", color: "#2fd7ff" }}>Opponent</div>
+        </div>
+      </div>
       
       {/* Game Status */}
       <div style={{ marginBottom: "10px", padding: "12px", fontWeight: "bold", color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff", fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal", background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "65px", display: "flex", alignItems: "center", justifyContent: "center" }}>
