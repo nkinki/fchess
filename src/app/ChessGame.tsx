@@ -13,6 +13,7 @@ interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
   user: User | null;
   profileImageUrl: string;
+  onNewGameClick: () => void; // A "New Game" gomb eseménykezelője
 }
 
 const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
@@ -27,7 +28,7 @@ const humanLikeStatusMessages = [
   "Let me see...", "Okay", "I know this"
 ];
 
-export default function ChessGame({ onGameConcluded, user, profileImageUrl }: ChessGameProps) {
+export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNewGameClick }: ChessGameProps) {
   const [game, setGame] = useState(() => new Chess());
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
@@ -53,12 +54,10 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
     const updateBoardSize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        // A tábla maximális méretének növelése 560-ról 660-ra
-        const calculatedSize = Math.min(containerWidth - 40, 660); // <--- MÓDOSÍTVA
+        const calculatedSize = Math.min(containerWidth - 40, 660);
         setBoardSize(calculatedSize);
       }
     };
-
     updateBoardSize();
     window.addEventListener('resize', updateBoardSize);
     return () => window.removeEventListener('resize', updateBoardSize);
@@ -90,7 +89,6 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
 
       worker.onmessage = (event) => {
         const message = event.data;
-        
         if (message.startsWith("bestmove")) {
           setIsOpponentThinking(false);
           clearTimeout(statusTimeoutRef.current!);
@@ -106,9 +104,7 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
               
               const newGame = new Chess(prev.fen());
               const move = {
-                from: sourceSquare,
-                to: targetSquare,
-                promotion: promotion || 'q'
+                from: sourceSquare, to: targetSquare, promotion: promotion || 'q'
               };
               
               try {
@@ -125,7 +121,6 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
           }
         }
       };
-
       worker.onerror = (error) => {
         console.error("Worker error:", error);
         setStatus("Game engine error");
@@ -140,18 +135,14 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
   const startConnectionSequence = useCallback((newOpponentName: string, isInitial: boolean) => {
     setIsConnecting(true);
     let countdown = 3;
-    setStatus(isInitial 
-      ? `Connecting to ${newOpponentName}... ${countdown}`
-      : `Switching to ${newOpponentName}... ${countdown}`);
+    setStatus(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
 
     clearInterval(countdownIntervalRef.current!);
 
     countdownIntervalRef.current = setInterval(() => {
       countdown -= 1;
       if (countdown > 0) {
-        setStatus(isInitial
-          ? `Connecting to ${newOpponentName}... ${countdown}`
-          : `Switching to ${newOpponentName}... ${countdown}`);
+        setStatus(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
       } else {
         clearInterval(countdownIntervalRef.current!);
         setStatus(`Connected with ${newOpponentName}. Your turn (White).`);
@@ -168,10 +159,8 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
 
   const makeOpponentMove = useCallback((currentFen: string) => {
     if (game.isGameOver() || !lozzaWorkerRef.current || isOpponentThinking) return;
-    
     setIsOpponentThinking(true);
     showThinkingStatus();
-    
     lozzaWorkerRef.current.postMessage(`position fen ${currentFen}`);
     lozzaWorkerRef.current.postMessage(`go movetime ${Math.round(1500 + Math.random() * 2000)}`);
   }, [game, isOpponentThinking, showThinkingStatus]);
@@ -182,48 +171,25 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
     const newGame = new Chess(game.fen());
     const movingPiece = newGame.get(sourceSquare);
     let move;
-
     try {
-      if (movingPiece?.type === "p" && 
-          ((movingPiece.color === "w" && targetSquare[1] === "8") || 
-           (movingPiece.color === "b" && targetSquare[1] === "1"))) {
+      if (movingPiece?.type === "p" && ((movingPiece.color === "w" && targetSquare[1] === "8") || (movingPiece.color === "b" && targetSquare[1] === "1"))) {
         move = newGame.move({ from: sourceSquare, to: targetSquare, promotion: "q" });
       } else {
         move = newGame.move({ from: sourceSquare, to: targetSquare });
       }
-
       if (!move) return false;
-      
       setGame(newGame);
       setIsUserTurn(false);
-
       if (!newGame.isGameOver()) {
         setTimeout(() => makeOpponentMove(newGame.fen()), 500 + Math.random() * 1000);
       }
-      
       return true;
     } catch {
       return false;
     }
   }, [game, isUserTurn, gameJustOver, isOpponentThinking, isConnecting, makeOpponentMove]);
-
-  const handleRestartGame = useCallback(() => {
-    if (isOpponentThinking && lozzaWorkerRef.current) {
-      lozzaWorkerRef.current.postMessage("stop");
-    }
-    clearTimeout(statusTimeoutRef.current!);
-    clearInterval(countdownIntervalRef.current!);
-    
-    setGame(new Chess());
-    setIsUserTurn(true);
-    setGameJustOver(false);
-    setIsOpponentThinking(false);
-    setIsConnecting(true);
-    
-    const newOpponent = selectRandomOpponentName();
-    setOpponentName(newOpponent);
-    startConnectionSequence(newOpponent, false);
-  }, [isOpponentThinking, selectRandomOpponentName, startConnectionSequence]);
+  
+  // A belső újraindító logikát eltávolítottuk, mert a vezérlés a page.tsx-hez került.
 
   useEffect(() => {
     const initialOpponent = selectRandomOpponentName();
@@ -258,170 +224,53 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
   }, [game, gameJustOver, opponentName, onGameConcluded]);
 
   return (
-    <div ref={containerRef} style={{ 
-      width: '100%',
-      maxWidth: '700px', // <--- MÓDOSÍTVA 600px-ről 700px-re
-      margin: '0 auto',
-      padding: '20px',
-      boxSizing: 'border-box',
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-    }}>
+    <div ref={containerRef} style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
       {/* Game Header */}
-      <div style={{
-        marginBottom: "10px",
-        padding: "15px",
-        textAlign: "center",
-        background: "linear-gradient(135deg, #181c24 0%, #232a38 100%)",
-        borderRadius: "10px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-        color: "#fff"
-      }}>
-        <h2 style={{ 
-          margin: "0 0 10px 0",
-          color: "#2fd7ff",
-          fontSize: "1.3em"
-        }}>
-          FarChess
-        </h2>
-        <p style={{ 
-          margin: "0 0 15px 0",
-          fontSize: "0.9em",
-          opacity: 0.8
-        }}>
-          Play chess, win $CHESS tokens!
-        </p>
-        <div
-          onClick={handleCopy}
-          style={{
-            display: "inline-block",
-            padding: "6px 12px",
-            fontSize: "0.75em",
-            color: copied ? "#0f0" : "#b5e0ff",
-            background: "#23293a",
-            borderRadius: "20px",
-            cursor: "pointer",
-            border: `1px dashed ${copied ? "#0f0" : "#2fd7ff"}`,
-            transition: "all 0.2s",
-            fontFamily: "monospace"
-          }}
-        >
+      <div style={{ marginBottom: "10px", padding: "15px", textAlign: "center", background: "linear-gradient(135deg, #181c24 0%, #232a38 100%)", borderRadius: "10px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", color: "#fff" }}>
+        <h2 style={{ margin: "0 0 10px 0", color: "#2fd7ff", fontSize: "1.3em" }}>FarChess</h2>
+        <p style={{ margin: "0 0 15px 0", fontSize: "0.9em", opacity: 0.8 }}>Play chess, win $CHESS tokens!</p>
+        <div onClick={handleCopy} style={{ display: "inline-block", padding: "6px 12px", fontSize: "0.75em", color: copied ? "#0f0" : "#b5e0ff", background: "#23293a", borderRadius: "20px", cursor: "pointer", border: `1px dashed ${copied ? "#0f0" : "#2fd7ff"}`, transition: "all 0.2s", fontFamily: "monospace" }}>
           {copied ? "✓ Copied!" : `Token: ${CHESS_CONTRACT.slice(0, 6)}...${CHESS_CONTRACT.slice(-4)}`}
         </div>
       </div>
 
       {/* Matchup Info */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '10px',
-        padding: '10px 15px',
-        background: "#181c24",
-        borderRadius: "8px",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
-      }}>
-        {/* User Info */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '10px 15px', background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {profileImageUrl ? (
-            <img
-              src={profileImageUrl}
-              alt="Your profile"
-              style={{ width: 40, height: 40, borderRadius: '50%', background: '#222', objectFit: 'cover' }}
-            />
-          ) : (
-            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ccc' }}>?</div>
-          )}
-          <span style={{ color: '#fff', fontWeight: 'bold' }}>
-            {user?.displayName || 'You'}
-          </span>
+          {profileImageUrl ? (<img src={profileImageUrl} alt="Your profile" style={{ width: 40, height: 40, borderRadius: '50%', background: '#222', objectFit: 'cover' }} />) : (<div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ccc' }}>?</div>)}
+          <span style={{ color: '#fff', fontWeight: 'bold' }}>{user?.displayName || 'You'}</span>
         </div>
-
         <span style={{ color: '#aaa', fontWeight: 'bold', margin: '0 10px' }}>VS</span>
-
-        {/* Opponent Info */}
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: "1.2em", fontWeight: "bold", color: "#fff" }}>
-            {opponentName}
-          </div>
-          <div style={{ fontSize: "0.9em", color: "#2fd7ff" }}>
-            Opponent
-          </div>
+          <div style={{ fontSize: "1.2em", fontWeight: "bold", color: "#fff" }}>{opponentName}</div>
+          <div style={{ fontSize: "0.9em", color: "#2fd7ff" }}>Opponent</div>
         </div>
       </div>
       
       {/* Game Status */}
-      <div style={{ 
-        marginBottom: "10px",
-        padding: "12px",
-        fontWeight: "bold",
-        color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff",
-        fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal",
-        background: "#181c24",
-        borderRadius: "8px",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-        height: "65px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
+      <div style={{ marginBottom: "10px", padding: "12px", fontWeight: "bold", color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff", fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal", background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "65px", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {status}
       </div>
 
       {/* Chessboard */}
-      <div style={{
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        margin: '10px 0'
-      }}>
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
         <Chessboard
-          position={game.fen()}
-          onPieceDrop={onDrop}
-          arePiecesDraggable={
-            isUserTurn && 
-            !game.isGameOver() && 
-            !gameJustOver && 
-            !isOpponentThinking &&
-            !isConnecting
-          }
-          boardOrientation="white"
-          boardWidth={boardSize}
+          position={game.fen()} onPieceDrop={onDrop}
+          arePiecesDraggable={({ piece }) => isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting && piece.startsWith('w')}
+          boardOrientation="white" boardWidth={boardSize}
           customDarkSquareStyle={{ backgroundColor: '#B58863' }}
           customLightSquareStyle={{ backgroundColor: '#F0D9B5' }}
-          customBoardStyle={{
-            borderRadius: '5px',
-            boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)'
-          }}
+          customBoardStyle={{ borderRadius: '5px', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)' }}
         />
       </div>
 
       {/* Game Controls */}
-      <div style={{ 
-        display: "flex",
-        justifyContent: "center",
-        gap: "15px",
-        marginTop: "15px"
-      }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginTop: "15px" }}>
         <button
-          onClick={handleRestartGame}
-          style={{
-            padding: "10px 20px",
-            fontSize: "0.9em",
-            backgroundColor: "#dc3545",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            transition: "background-color 0.2s",
-            fontWeight: "bold"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#c82333";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#dc3545";
-          }}
-        >
+          onClick={onNewGameClick} // Itt használjuk az új propot
+          style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c82333"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#dc3545"; }}>
           New Game
         </button>
       </div>
