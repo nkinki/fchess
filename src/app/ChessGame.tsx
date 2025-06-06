@@ -35,6 +35,13 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // A hiányzó handleCopy függvény hozzáadása
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(CHESS_CONTRACT);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
+
   // Responsive sizing
   useEffect(() => {
     const updateBoardSize = () => {
@@ -210,12 +217,6 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     setOpponentName(newOpponent);
     startConnectionSequence(newOpponent, false);
   }, [isOpponentThinking, selectRandomOpponentName, startConnectionSequence]);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(CHESS_CONTRACT);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, []);
 
   useEffect(() => {
     const initialOpponent = selectRandomOpponentName();
