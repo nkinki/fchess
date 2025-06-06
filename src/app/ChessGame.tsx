@@ -3,8 +3,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
+interface User {
+  fid?: number;
+  displayName?: string;
+  username?: string;
+}
+
 interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
+  user: User | null;
+  profileImageUrl: string;
 }
 
 const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
@@ -19,7 +27,7 @@ const humanLikeStatusMessages = [
   "Let me see...", "Okay", "I know this"
 ];
 
-export default function ChessGame({ onGameConcluded }: ChessGameProps) {
+export default function ChessGame({ onGameConcluded, user, profileImageUrl }: ChessGameProps) {
   const [game, setGame] = useState(() => new Chess());
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
@@ -35,14 +43,12 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // A hiányzó handleCopy függvény hozzáadása
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(CHESS_CONTRACT);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, []);
 
-  // Responsive sizing
   useEffect(() => {
     const updateBoardSize = () => {
       if (containerRef.current) {
@@ -302,31 +308,46 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
         </div>
       </div>
 
-      {/* Opponent Info */}
-      <div style={{ 
-        textAlign: 'center', 
+      {/* Matchup Info */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: '10px',
-        padding: '10px',
+        padding: '10px 15px',
         background: "#181c24",
         borderRadius: "8px",
         boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
       }}>
-        <div style={{
-          fontSize: "0.9em",
-          color: "#2fd7ff",
-          marginBottom: "5px"
-        }}>
-          Playing against:
+        {/* User Info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {profileImageUrl ? (
+            <img
+              src={profileImageUrl}
+              alt="Your profile"
+              style={{ width: 40, height: 40, borderRadius: '50%', background: '#222', objectFit: 'cover' }}
+            />
+          ) : (
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ccc' }}>?</div>
+          )}
+          <span style={{ color: '#fff', fontWeight: 'bold' }}>
+            {user?.displayName || 'You'}
+          </span>
         </div>
-        <div style={{
-          fontSize: "1.2em",
-          fontWeight: "bold",
-          color: "#fff"
-        }}>
-          {opponentName}
+
+        <span style={{ color: '#aaa', fontWeight: 'bold', margin: '0 10px' }}>VS</span>
+
+        {/* Opponent Info */}
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: "1.2em", fontWeight: "bold", color: "#fff" }}>
+            {opponentName}
+          </div>
+          <div style={{ fontSize: "0.9em", color: "#2fd7ff" }}>
+            Opponent
+          </div>
         </div>
       </div>
-
+      
       {/* Game Status */}
       <div style={{ 
         marginBottom: "10px",
