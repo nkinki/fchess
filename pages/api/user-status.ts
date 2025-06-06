@@ -17,7 +17,7 @@ export default async function handler(
   try {
     // 2. SQL lekérdezést futtatunk az adatbázisban a @vercel/postgres segítségével.
     // A `${BigInt(fid)}` használata biztonságos, véd az SQL injection ellen.
-    let { rows } = await db.sql`
+    const { rows } = await db.sql`
       SELECT has_played_free_game FROM users WHERE fid = ${BigInt(fid)};
     `;
     
