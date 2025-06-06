@@ -3,16 +3,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
-// Az User interfészt eltávolítottuk, mivel a propot már nem használjuk
-// interface User { ... }
-
 interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
-  // Az user és profileImageUrl propokat eltávolítottuk
   onNewGameClick: () => void;
 }
 
-const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
+// A CHESS_CONTRACT konstanst eltávolítottuk
+// const CHESS_CONTRACT = "0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07";
 
 const opponentNamesPool = [
   "M. Carlsen", "G. Kasparov", "R. Fischer", "J. Polgar", 
@@ -24,16 +21,13 @@ const humanLikeStatusMessages = [
   "Let me see...", "Okay", "I know this"
 ];
 
-// A propok listájából is kivettük a feleslegeseket
 export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGameProps) {
   const [game, setGame] = useState(() => new Chess());
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
   const [isOpponentThinking, setIsOpponentThinking] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
-  
-  // A felesleges state-eket eltávolítottuk
-  const [statusText, setStatusText] = useState("Finding opponent..."); // átnevezve 'status'-ról
+  const [statusText, setStatusText] = useState("Finding opponent...");
   const [opponentName, setOpponentName] = useState("Your Opponent");
   const [boardSize, setBoardSize] = useState(400);
 
@@ -41,8 +35,6 @@ export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGame
   const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // A felesleges handleCopy és copied state eltávolítva
   
   useEffect(() => {
     const updateBoardSize = () => {
@@ -64,10 +56,10 @@ export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGame
   const showThinkingStatus = useCallback(() => {
     if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
     const randomStatus = humanLikeStatusMessages[Math.floor(Math.random() * humanLikeStatusMessages.length)];
-    setStatusText(`${opponentName}: "${randomStatus}"`); // setStatusText használata
+    setStatusText(`${opponentName}: "${randomStatus}"`);
     statusTimeoutRef.current = setTimeout(() => {
       if (isOpponentThinking) {
-        setStatusText(`${opponentName} is thinking...`); // setStatusText használata
+        setStatusText(`${opponentName} is thinking...`);
       }
     }, 1500 + Math.random() * 1500);
   }, [opponentName, isOpponentThinking]);
@@ -93,11 +85,11 @@ export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGame
               try {
                 newGame.move(move);
                 setIsUserTurn(true);
-                setStatusText("Your turn (White)"); // setStatusText használata
+                setStatusText("Your turn (White)");
                 return newGame;
               } catch {
                 setIsUserTurn(true);
-                setStatusText(`${opponentName} attempted invalid move. Your turn.`); // setStatusText használata
+                setStatusText(`${opponentName} attempted invalid move. Your turn.`);
                 return prev;
               }
             });
@@ -106,27 +98,27 @@ export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGame
       };
       worker.onerror = (error) => {
         console.error("Worker error:", error);
-        setStatusText("Game engine error"); // setStatusText használata
+        setStatusText("Game engine error");
         setIsOpponentThinking(false);
       };
     } catch (error) {
       console.error("Worker initialization failed:", error);
-      setStatusText("Failed to load game engine"); // setStatusText használata
+      setStatusText("Failed to load game engine");
     }
   }, [opponentName]);
 
   const startConnectionSequence = useCallback((newOpponentName: string, isInitial: boolean) => {
     setIsConnecting(true);
     let countdown = 3;
-    setStatusText(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`); // setStatusText használata
+    setStatusText(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
     clearInterval(countdownIntervalRef.current!);
     countdownIntervalRef.current = setInterval(() => {
       countdown -= 1;
       if (countdown > 0) {
-        setStatusText(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`); // setStatusText használata
+        setStatusText(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
       } else {
         clearInterval(countdownIntervalRef.current!);
-        setStatusText(`Connected with ${newOpponentName}. Your turn (White).`); // setStatusText használata
+        setStatusText(`Connected with ${newOpponentName}. Your turn (White).`);
         setIsConnecting(false);
         if (isInitial) {
           initializeWorker();
@@ -194,14 +186,13 @@ export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGame
       if (game.isCheckmate()) {
         winner = game.turn() === "w" ? "opponent" : "user";
       }
-      setStatusText(winner === "user" ? "🎉 Congratulations, you won!" : winner === "opponent" ? `🏆 ${opponentName} wins!` : "🤝 It's a draw!"); // setStatusText használata
+      setStatusText(winner === "user" ? "🎉 Congratulations, you won!" : winner === "opponent" ? `🏆 ${opponentName} wins!` : "🤝 It's a draw!");
       onGameConcluded?.(winner);
     }
   }, [game, gameJustOver, opponentName, onGameConcluded]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
-      {/* A felesleges Game Header és Matchup Info dobozokat eltávolítottuk */}
       
       {/* Game Status */}
       <div style={{ marginBottom: "10px", padding: "12px", fontWeight: "bold", color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff", fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal", background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "65px", display: "flex", alignItems: "center", justifyContent: "center" }}>
