@@ -63,6 +63,8 @@ export default function Home() {
   function handleStartGame() {
     if (hasPlayedFreeGame) {
       alert("A következő játék fizetős lesz, ez a funkció még fejlesztés alatt áll.");
+      // Itt NEM indítjuk el a játékot, mert a fizetésre várunk.
+      // A jövőben itt indulna a Transaction Frame.
     } else {
       setGameStarted(true);
     }
@@ -82,14 +84,19 @@ export default function Home() {
           custodyAddress: custodyAddress
         }),
       });
+      // Fontos: frissítjük a kliensoldali állapotot is, hogy a következő játék már fizetős legyen.
       setHasPlayedFreeGame(true);
     } catch (error) {
       console.error("Failed to save game conclusion:", error);
     }
   }
 
+  // JAVÍTÁS: Ez a függvény most már ugyanazt csinálja, mint a `handleStartGame`.
+  // Így a "New Game" gomb is a fizetési logikát fogja triggerelni.
   function handleNewGameRequest() {
-    setGameStarted(false);
+    // Ahelyett, hogy visszadobnánk, egyszerűen meghívjuk a start logikát.
+    // setGameStarted(false); // Ezt a sort kivesszük
+    handleStartGame();
   }
 
   if (isNeynarContextLoading) {
@@ -142,7 +149,6 @@ export default function Home() {
           {gameStarted && 
             <ChessGame 
               onGameConcluded={handleOptionalGameEndLogic} 
-              // Visszaállítottuk a propokat
               user={user} 
               profileImageUrl={profileImageUrl}
               onNewGameClick={handleNewGameRequest}
