@@ -3,19 +3,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
-// A DraggablePieceArgs interfészre már nincs szükségünk
-// interface DraggablePieceArgs { ... }
-
-interface User {
-  fid?: number;
-  displayName?: string;
-  username?: string;
-}
+// Az User interfészt eltávolítottuk, mivel a propot már nem használjuk
+// interface User { ... }
 
 interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
-  user: User | null;
-  profileImageUrl: string;
+  // Az user és profileImageUrl propokat eltávolítottuk
   onNewGameClick: () => void;
 }
 
@@ -31,28 +24,26 @@ const humanLikeStatusMessages = [
   "Let me see...", "Okay", "I know this"
 ];
 
-export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNewGameClick }: ChessGameProps) {
+// A propok listájából is kivettük a feleslegeseket
+export default function ChessGame({ onGameConcluded, onNewGameClick }: ChessGameProps) {
   const [game, setGame] = useState(() => new Chess());
   const [isUserTurn, setIsUserTurn] = useState(true);
   const [gameJustOver, setGameJustOver] = useState(false);
   const [isOpponentThinking, setIsOpponentThinking] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
-  const [status, setStatus] = useState("Finding opponent...");
+  
+  // A felesleges state-eket eltávolítottuk
+  const [statusText, setStatusText] = useState("Finding opponent..."); // átnevezve 'status'-ról
   const [opponentName, setOpponentName] = useState("Your Opponent");
-  const [copied, setCopied] = useState(false);
   const [boardSize, setBoardSize] = useState(400);
 
   const lozzaWorkerRef = useRef<Worker | null>(null);
   const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(CHESS_CONTRACT);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, []);
-
+  
+  // A felesleges handleCopy és copied state eltávolítva
+  
   useEffect(() => {
     const updateBoardSize = () => {
       if (containerRef.current) {
@@ -73,10 +64,10 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
   const showThinkingStatus = useCallback(() => {
     if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
     const randomStatus = humanLikeStatusMessages[Math.floor(Math.random() * humanLikeStatusMessages.length)];
-    setStatus(`${opponentName}: "${randomStatus}"`);
+    setStatusText(`${opponentName}: "${randomStatus}"`); // setStatusText használata
     statusTimeoutRef.current = setTimeout(() => {
       if (isOpponentThinking) {
-        setStatus(`${opponentName} is thinking...`);
+        setStatusText(`${opponentName} is thinking...`); // setStatusText használata
       }
     }, 1500 + Math.random() * 1500);
   }, [opponentName, isOpponentThinking]);
@@ -102,11 +93,11 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
               try {
                 newGame.move(move);
                 setIsUserTurn(true);
-                setStatus("Your turn (White)");
+                setStatusText("Your turn (White)"); // setStatusText használata
                 return newGame;
               } catch {
                 setIsUserTurn(true);
-                setStatus(`${opponentName} attempted invalid move. Your turn.`);
+                setStatusText(`${opponentName} attempted invalid move. Your turn.`); // setStatusText használata
                 return prev;
               }
             });
@@ -115,27 +106,27 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       };
       worker.onerror = (error) => {
         console.error("Worker error:", error);
-        setStatus("Game engine error");
+        setStatusText("Game engine error"); // setStatusText használata
         setIsOpponentThinking(false);
       };
     } catch (error) {
       console.error("Worker initialization failed:", error);
-      setStatus("Failed to load game engine");
+      setStatusText("Failed to load game engine"); // setStatusText használata
     }
   }, [opponentName]);
 
   const startConnectionSequence = useCallback((newOpponentName: string, isInitial: boolean) => {
     setIsConnecting(true);
     let countdown = 3;
-    setStatus(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
+    setStatusText(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`); // setStatusText használata
     clearInterval(countdownIntervalRef.current!);
     countdownIntervalRef.current = setInterval(() => {
       countdown -= 1;
       if (countdown > 0) {
-        setStatus(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`);
+        setStatusText(isInitial ? `Connecting to ${newOpponentName}... ${countdown}` : `Switching to ${newOpponentName}... ${countdown}`); // setStatusText használata
       } else {
         clearInterval(countdownIntervalRef.current!);
-        setStatus(`Connected with ${newOpponentName}. Your turn (White).`);
+        setStatusText(`Connected with ${newOpponentName}. Your turn (White).`); // setStatusText használata
         setIsConnecting(false);
         if (isInitial) {
           initializeWorker();
@@ -155,14 +146,11 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
   }, [game, isOpponentThinking, showThinkingStatus]);
 
   const onDrop = useCallback((sourceSquare: Square, targetSquare: Square): boolean => {
-    // JAVÍTÁS: A színellenőrzést ide helyeztük át.
     const piece = game.get(sourceSquare);
     if (!piece || piece.color !== 'w') {
         return false;
     }
-
     if (!isUserTurn || game.isGameOver() || gameJustOver || isOpponentThinking || isConnecting) return false;
-    
     const newGame = new Chess(game.fen());
     const movingPiece = newGame.get(sourceSquare);
     let move;
@@ -206,24 +194,25 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       if (game.isCheckmate()) {
         winner = game.turn() === "w" ? "opponent" : "user";
       }
-      setStatus(winner === "user" ? "🎉 Congratulations, you won!" : winner === "opponent" ? `🏆 ${opponentName} wins!` : "🤝 It's a draw!");
+      setStatusText(winner === "user" ? "🎉 Congratulations, you won!" : winner === "opponent" ? `🏆 ${opponentName} wins!` : "🤝 It's a draw!"); // setStatusText használata
       onGameConcluded?.(winner);
     }
   }, [game, gameJustOver, opponentName, onGameConcluded]);
 
-  // A canDragPiece függvényre már nincs szükségünk
-  // const canDragPiece = ...
-
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
-      {/* ... a JSX többi része változatlan ... */}
+      {/* A felesleges Game Header és Matchup Info dobozokat eltávolítottuk */}
       
+      {/* Game Status */}
+      <div style={{ marginBottom: "10px", padding: "12px", fontWeight: "bold", color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff", fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal", background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "65px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {statusText}
+      </div>
+
       {/* Chessboard */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
         <Chessboard
           position={game.fen()}
           onPieceDrop={onDrop}
-          // JAVÍTÁS: Itt egy egyszerű logikai értéket adunk át
           arePiecesDraggable={isUserTurn && !game.isGameOver() && !gameJustOver && !isOpponentThinking && !isConnecting}
           boardOrientation="white" boardWidth={boardSize}
           customDarkSquareStyle={{ backgroundColor: '#B58863' }}
@@ -231,8 +220,6 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
           customBoardStyle={{ borderRadius: '5px', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)' }}
         />
       </div>
-
-      {/* ... a JSX többi része változatlan ... */}
       
       {/* Game Controls */}
       <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginTop: "15px" }}>

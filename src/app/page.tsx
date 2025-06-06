@@ -88,7 +88,6 @@ export default function Home() {
     }
   }
 
-  // Ez az új függvény, ami kezeli a "New Game" gombot
   function handleNewGameRequest() {
     setGameStarted(false);
   }
@@ -143,9 +142,8 @@ export default function Home() {
           {gameStarted && 
             <ChessGame 
               onGameConcluded={handleOptionalGameEndLogic} 
-              user={user} 
-              profileImageUrl={profileImageUrl}
-              onNewGameClick={handleNewGameRequest} // Itt adjuk át a függvényt
+              onNewGameClick={handleNewGameRequest}
+              // A felesleges user és profileImageUrl propokat eltávolítottuk
             />}
         </>
       )}
