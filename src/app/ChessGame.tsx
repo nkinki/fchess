@@ -47,7 +47,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     const updateBoardSize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const calculatedSize = Math.min(containerWidth - 40, 500);
+        const calculatedSize = Math.min(containerWidth - 40, 560);
         setBoardSize(calculatedSize);
       }
     };
@@ -261,7 +261,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
     }}>
       {/* Game Header */}
       <div style={{
-        marginBottom: "20px",
+        marginBottom: "10px",
         padding: "15px",
         textAlign: "center",
         background: "linear-gradient(135deg, #181c24 0%, #232a38 100%)",
@@ -305,7 +305,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
       {/* Opponent Info */}
       <div style={{ 
         textAlign: 'center', 
-        marginBottom: '15px',
+        marginBottom: '10px',
         padding: '10px',
         background: "#181c24",
         borderRadius: "8px",
@@ -329,16 +329,18 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
 
       {/* Game Status */}
       <div style={{ 
-        marginBottom: "15px",
+        marginBottom: "10px",
         padding: "12px",
-        textAlign: "center",
         fontWeight: "bold",
         color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff",
         fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal",
         background: "#181c24",
         borderRadius: "8px",
-        minHeight: "20px",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+        height: "65px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}>
         {status}
       </div>
@@ -348,7 +350,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
         width: '100%',
         display: 'flex',
         justifyContent: 'center',
-        margin: '20px 0'
+        margin: '10px 0'
       }}>
         <Chessboard
           position={game.fen()}
@@ -376,7 +378,7 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
         display: "flex",
         justifyContent: "center",
         gap: "15px",
-        marginTop: "20px"
+        marginTop: "15px"
       }}>
         <button
           onClick={handleRestartGame}

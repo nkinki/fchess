@@ -62,7 +62,7 @@ export default function Home() {
 
   if (isNeynarContextLoading) {
     return (
-      <main style={{ maxWidth: 440, margin: "40px auto", textAlign: "center", padding: "20px" }}>
+      <main style={{ maxWidth: 600, margin: "20px auto", textAlign: "center", padding: "20px" }}>
         <h1>FARCHESS</h1>
         <p>Loading user data...</p>
       </main>
@@ -71,13 +71,13 @@ export default function Home() {
 
   return (
     <main style={{ 
-        maxWidth: 440,
-        margin: "40px auto", 
+        maxWidth: 600,
+        margin: "10px auto", 
         textAlign: "center", 
-        padding: "20px", 
+        padding: "10px", 
         fontFamily: "var(--font-geist-sans), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" 
     }}>
-      <h1 style={{fontSize: "2.2em", fontWeight:"bold", marginBottom:"20px"}}>FARCHESS</h1>
+      {/* FARCHESS h1 tag removed */}
 
       {!isAuthenticated && (
         <div style={{padding:"15px", background:'transparent'}}>
@@ -96,8 +96,8 @@ export default function Home() {
             border: "2px solid #444",
             borderRadius: "14px",
             boxShadow: "0 2px 12px #0004",
-            padding: "16px 26px",
-            margin: "28px auto 18px auto",
+            padding: "12px 20px",
+            margin: "15px auto",
             width: "fit-content",
             minWidth: 240,
             justifyContent: "center"
@@ -137,7 +137,7 @@ export default function Home() {
           </div>
           
           {!gameStarted && (
-            <div style={{ margin: "15px 0", padding:"10px", border:"1px solid #555", borderRadius:"5px", background:'transparent' }}>
+            <div style={{ margin: "10px 0", padding:"10px", border:"1px solid #555", borderRadius:"5px", background:'transparent' }}>
               <label htmlFor="custodyAddr" style={{display:"block", marginBottom:"5px"}}>Custody Wallet Address (optional):</label>
               <input
                   id="custodyAddr"
@@ -151,7 +151,7 @@ export default function Home() {
           )}
 
           {!gameStarted && (
-            <div style={{marginTop:"10px"}}> 
+            <div style={{marginTop:"5px"}}> 
                 <button onClick={handleStartGame} style={{ padding: "10px 20px", fontSize: "1em", background: "green", color: "white", border:"none", borderRadius:"5px", cursor:"pointer", marginRight:"10px" }}>
                   Start Game
                 </button>
