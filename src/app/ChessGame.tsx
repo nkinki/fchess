@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess, Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
-// Visszaállítjuk az User interfészt
 interface User {
   fid?: number;
   displayName?: string;
@@ -12,7 +11,6 @@ interface User {
 
 interface ChessGameProps {
   onGameConcluded?: (winner?: "user" | "opponent" | "draw") => void;
-  // Visszaállítjuk a szükséges propokat
   user: User | null;
   profileImageUrl: string;
   onNewGameClick: () => void;
@@ -28,7 +26,6 @@ const humanLikeStatusMessages = [
   "Let me see...", "Okay", "I know this"
 ];
 
-// Visszaadjuk a propokat a komponensnek
 export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNewGameClick }: ChessGameProps) {
   const [game, setGame] = useState(() => new Chess());
   const [isUserTurn, setIsUserTurn] = useState(true);
@@ -198,11 +195,19 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       onGameConcluded?.(winner);
     }
   }, [game, gameJustOver, opponentName, onGameConcluded]);
+  
+  // ÚJ FÜGGVÉNY A FELADÁSHOZ
+  const handleResign = () => {
+    if (game.isGameOver() || gameJustOver) return; // Ne lehessen többször feladni
+    
+    setGameJustOver(true); // Játék vége állapot beállítása
+    setStatusText(`🏳️ You resigned. ${opponentName} wins!`); // Státusz frissítése
+    onGameConcluded?.("opponent"); // Jelzés a szülőnek, hogy az ellenfél nyert
+  };
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
       
-      {/* Visszaállított Matchup Info doboz */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '10px 15px', background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {profileImageUrl ? (<img src={profileImageUrl} alt="Your profile" style={{ width: 40, height: 40, borderRadius: '50%', background: '#222', objectFit: 'cover' }} />) : (<div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ccc' }}>?</div>)}
@@ -215,12 +220,10 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
         </div>
       </div>
       
-      {/* Game Status */}
       <div style={{ marginBottom: "10px", padding: "12px", fontWeight: "bold", color: isOpponentThinking || isConnecting ? "#ffa500" : "#fff", fontStyle: isOpponentThinking || isConnecting ? "italic" : "normal", background: "#181c24", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "65px", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {statusText}
       </div>
 
-      {/* Chessboard */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
         <Chessboard
           position={game.fen()}
@@ -233,15 +236,27 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
         />
       </div>
       
-      {/* Game Controls */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginTop: "15px" }}>
-        <button
-          onClick={onNewGameClick}
-          style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c82333"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#dc3545"; }}>
-          New Game
-        </button>
+      {/* JAVÍTÁS: A gombok logikája */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginTop: "15px", minHeight: "45px" }}>
+        {gameJustOver ? (
+          // Ha a játéknak vége, a "New Game" gomb jelenik meg
+          <button
+            onClick={onNewGameClick}
+            style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c82333"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#dc3545"; }}>
+            New Game
+          </button>
+        ) : (
+          // Amíg a játék tart, a "Resign" gomb látható
+          <button
+            onClick={handleResign}
+            style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#6c757d", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#5a6268"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#6c757d"; }}>
+            Resign
+          </button>
+        )}
       </div>
     </div>
   );
