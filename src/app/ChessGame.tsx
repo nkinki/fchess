@@ -388,10 +388,13 @@ export default function ChessGame({ onGameConcluded }: ChessGameProps) {
             borderRadius: "5px",
             cursor: "pointer",
             transition: "background-color 0.2s",
-            fontWeight: "bold",
-            ":hover": {
-              backgroundColor: "#c82333"
-            }
+            fontWeight: "bold"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#c82333";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "#dc3545";
           }}
         >
           New Game
