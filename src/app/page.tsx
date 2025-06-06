@@ -77,7 +77,6 @@ export default function Home() {
         padding: "10px", 
         fontFamily: "var(--font-geist-sans), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" 
     }}>
-      {/* FARCHESS h1 tag removed */}
 
       {!isAuthenticated && (
         <div style={{padding:"15px", background:'transparent'}}>
@@ -88,6 +87,7 @@ export default function Home() {
 
       {isAuthenticated && user && (
         <>
+          {/* This profile card stays visible even after the game starts */}
           <div style={{
             display: "flex",
             alignItems: "center",
@@ -137,28 +137,28 @@ export default function Home() {
           </div>
           
           {!gameStarted && (
-            <div style={{ margin: "10px 0", padding:"10px", border:"1px solid #555", borderRadius:"5px", background:'transparent' }}>
-              <label htmlFor="custodyAddr" style={{display:"block", marginBottom:"5px"}}>Custody Wallet Address (optional):</label>
-              <input
-                  id="custodyAddr"
-                  type="text"
-                  placeholder="0x..."
-                  value={custodyAddress || ""}
-                  onChange={e => setCustodyAddress(e.target.value)}
-                  style={{width:"90%", padding:"8px", borderRadius:"4px", border:"1px solid #777", background:"#222", color:"#eee"}}
-              />
-            </div>
-          )}
+            <>
+              <div style={{ margin: "10px 0", padding:"10px", border:"1px solid #555", borderRadius:"5px", background:'transparent' }}>
+                <label htmlFor="custodyAddr" style={{display:"block", marginBottom:"5px"}}>Custody Wallet Address (optional):</label>
+                <input
+                    id="custodyAddr"
+                    type="text"
+                    placeholder="0x..."
+                    value={custodyAddress || ""}
+                    onChange={e => setCustodyAddress(e.target.value)}
+                    style={{width:"90%", padding:"8px", borderRadius:"4px", border:"1px solid #777", background:"#222", color:"#eee"}}
+                />
+              </div>
 
-          {!gameStarted && (
-            <div style={{marginTop:"5px"}}> 
-                <button onClick={handleStartGame} style={{ padding: "10px 20px", fontSize: "1em", background: "green", color: "white", border:"none", borderRadius:"5px", cursor:"pointer", marginRight:"10px" }}>
-                  Start Game
-                </button>
-            </div>
+              <div style={{marginTop:"5px"}}> 
+                  <button onClick={handleStartGame} style={{ padding: "10px 20px", fontSize: "1em", background: "green", color: "white", border:"none", borderRadius:"5px", cursor:"pointer", marginRight:"10px" }}>
+                    Start Game
+                  </button>
+              </div>
+            </>
           )}
           
-          {gameStarted && <ChessGame onGameConcluded={handleOptionalGameEndLogic} />} 
+          {gameStarted && <ChessGame onGameConcluded={handleOptionalGameEndLogic} user={user} profileImageUrl={profileImageUrl} />} 
         </>
       )}
     </main>
