@@ -53,7 +53,8 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
     const updateBoardSize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const calculatedSize = Math.min(containerWidth - 40, 560);
+        // A tábla maximális méretének növelése 560-ról 660-ra
+        const calculatedSize = Math.min(containerWidth - 40, 660); // <--- MÓDOSÍTVA
         setBoardSize(calculatedSize);
       }
     };
@@ -259,7 +260,7 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl }: Ch
   return (
     <div ref={containerRef} style={{ 
       width: '100%',
-      maxWidth: '600px',
+      maxWidth: '700px', // <--- MÓDOSÍTVA 600px-ről 700px-re
       margin: '0 auto',
       padding: '20px',
       boxSizing: 'border-box',

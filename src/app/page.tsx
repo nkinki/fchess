@@ -62,7 +62,7 @@ export default function Home() {
 
   if (isNeynarContextLoading) {
     return (
-      <main style={{ maxWidth: 600, margin: "20px auto", textAlign: "center", padding: "20px" }}>
+      <main style={{ maxWidth: 700, margin: "20px auto", textAlign: "center", padding: "20px" }}>
         <h1>FARCHESS</h1>
         <p>Loading user data...</p>
       </main>
@@ -71,7 +71,7 @@ export default function Home() {
 
   return (
     <main style={{ 
-        maxWidth: 600,
+        maxWidth: 700, // <--- MÓDOSÍTVA 600-ról 700-ra
         margin: "10px auto", 
         textAlign: "center", 
         padding: "10px", 
