@@ -179,30 +179,46 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
       clearInterval(countdownIntervalRef.current!);
     };
   }, [selectRandomOpponentName, startConnectionSequence]);
+  
+  const handleGameEnd = (winner: "user" | "opponent" | "draw") => {
+    if (gameJustOver) return;
+    setGameJustOver(true);
+    setIsOpponentThinking(false);
+    setIsConnecting(false);
+    clearTimeout(statusTimeoutRef.current!);
+    clearInterval(countdownIntervalRef.current!);
+
+    let status = "";
+    if (winner === "user") {
+        status = "🎉 Congratulations, you won!";
+    } else if (winner === "opponent") {
+        status = `🏆 ${opponentName} wins!`;
+    } else {
+        status = "🤝 It's a draw!";
+    }
+    setStatusText(status);
+    onGameConcluded?.(winner);
+  }
 
   useEffect(() => {
     if (game.isGameOver() && !gameJustOver) {
-      setGameJustOver(true);
-      setIsOpponentThinking(false);
-      setIsConnecting(false);
-      clearTimeout(statusTimeoutRef.current!);
-      clearInterval(countdownIntervalRef.current!);
       let winner: "user" | "opponent" | "draw" = "draw";
       if (game.isCheckmate()) {
         winner = game.turn() === "w" ? "opponent" : "user";
       }
-      setStatusText(winner === "user" ? "🎉 Congratulations, you won!" : winner === "opponent" ? `🏆 ${opponentName} wins!` : "🤝 It's a draw!");
-      onGameConcluded?.(winner);
+      handleGameEnd(winner);
     }
   }, [game, gameJustOver, opponentName, onGameConcluded]);
   
-  // ÚJ FÜGGVÉNY A FELADÁSHOZ
   const handleResign = () => {
-    if (game.isGameOver() || gameJustOver) return; // Ne lehessen többször feladni
-    
-    setGameJustOver(true); // Játék vége állapot beállítása
-    setStatusText(`🏳️ You resigned. ${opponentName} wins!`); // Státusz frissítése
-    onGameConcluded?.("opponent"); // Jelzés a szülőnek, hogy az ellenfél nyert
+    handleGameEnd("opponent");
+    // Frissítjük a státuszt, hogy egyértelmű legyen a feladás
+    setStatusText(`🏳️ You resigned. ${opponentName} wins!`);
+  };
+
+  // ÚJ FÜGGVÉNY A GYŐZELEM TESZTELÉSÉHEZ
+  const handleWinForTest = () => {
+    handleGameEnd("user");
   };
 
   return (
@@ -236,10 +252,8 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
         />
       </div>
       
-      {/* JAVÍTÁS: A gombok logikája */}
       <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginTop: "15px", minHeight: "45px" }}>
         {gameJustOver ? (
-          // Ha a játéknak vége, a "New Game" gomb jelenik meg
           <button
             onClick={onNewGameClick}
             style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
@@ -248,14 +262,25 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
             New Game
           </button>
         ) : (
-          // Amíg a játék tart, a "Resign" gomb látható
-          <button
-            onClick={handleResign}
-            style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#6c757d", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#5a6268"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#6c757d"; }}>
-            Resign
-          </button>
+          <>
+            <button
+              onClick={handleResign}
+              style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#6c757d", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", transition: "background-color 0.2s", fontWeight: "bold" }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#5a6268"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#6c757d"; }}>
+              Resign
+            </button>
+            
+            {/* JAVÍTÁS: A teszt gomb, ami csak fejlesztői módban jelenik meg */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={handleWinForTest}
+                style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#17a2b8", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}
+              >
+                Test Win
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
