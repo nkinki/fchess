@@ -12,11 +12,8 @@ import { ethers } from 'ethers';
 // A Base hálózat RPC URL-je. Ezen keresztül kommunikálunk a blokklánccal.
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
-// === MÓDOSÍTANDÓ ===
 // A $CHESS token szerződésének címe a Base hálózaton.
-// CSERÉLD LE A VALÓDI SZERZŐDÉS CÍMÉRE!
-const CHESS_TOKEN_ADDRESS = '0xYourChessTokenContractAddressOnBase'; 
-// ===================================================================
+const CHESS_TOKEN_ADDRESS = '0x47AF6bd390D03E266EB87cAb81Aa6988B65d5B07'; 
 
 // A token-szerződés minimális interfésze (ABI), ami csak a `transfer` függvényt tartalmazza.
 const CHESS_TOKEN_ABI = [
