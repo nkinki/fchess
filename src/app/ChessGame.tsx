@@ -274,10 +274,10 @@ export default function ChessGame({ onGameConcluded, user, profileImageUrl, onNe
             {/* JAVÍTÁS: A teszt gomb, ami csak fejlesztői módban jelenik meg */}
             {process.env.NODE_ENV === 'development' && (
               <button
-                onClick={handleWinForTest}
-                style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#17a2b8", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}
-              >
-                Test Win
+  onClick={handleWinForTest}
+  style={{ padding: "10px 20px", fontSize: "0.9em", backgroundColor: "#17a2b8", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}
+>
+  Test Win (Éles)
               </button>
             )}
           </>

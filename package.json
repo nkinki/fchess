@@ -19,6 +19,7 @@
     "@thirdweb-dev/react": "^4.9.4",
     "@vercel/postgres": "^0.10.0",
     "chess.js": "^1.2.0",
+    "cors": "^2.8.5",
     "ethers": "^6.10.0",
     "groq-sdk": "^0.23.0",
     "hls.js": "^1.6.2",
